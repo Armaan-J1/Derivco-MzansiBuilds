@@ -109,6 +109,16 @@ export async function addMilestone(projectId: string, milestone: Omit<Milestone,
   return ref.id
 }
 
+export async function getProjectMilestones(projectId: string): Promise<Milestone[]> {
+  const snap = await getDocs(collection(db, 'projects', projectId, 'milestones'))
+  return snap.docs
+    .map((m) => {
+      const d = m.data()
+      return { id: m.id, date: d.date as string, title: d.title as string, description: d.description as string }
+    })
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
 export async function getProjectById(projectId: string): Promise<Project | null> {
   const snap = await getDoc(doc(db, 'projects', projectId))
   if (!snap.exists()) return null

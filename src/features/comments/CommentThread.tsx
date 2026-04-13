@@ -7,13 +7,14 @@ interface Props {
   feedItemId: string
   initialComments: Comment[]
   currentUserId: string
+  onCountChange?: (count: number) => void
 }
 
 function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function CommentThread({ feedItemId, initialComments, currentUserId }: Props) {
+export default function CommentThread({ feedItemId, initialComments, currentUserId, onCountChange }: Props) {
   const { user } = useAuthStore()
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [text, setText] = useState('')
@@ -21,7 +22,10 @@ export default function CommentThread({ feedItemId, initialComments, currentUser
   const [submitHover, setSubmitHover] = useState(false)
 
   useEffect(() => {
-    getComments(feedItemId).then(setComments)
+    getComments(feedItemId).then((fetched) => {
+      setComments(fetched)
+      onCountChange?.(fetched.length)
+    })
   }, [feedItemId])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -34,7 +38,11 @@ export default function CommentThread({ feedItemId, initialComments, currentUser
     setError('')
     const authorName = user.displayName ?? 'Anonymous'
     const newComment = await addComment(feedItemId, currentUserId, authorName, text.trim())
-    setComments((prev) => [...prev, newComment])
+    setComments((prev) => {
+      const next = [...prev, newComment]
+      onCountChange?.(next.length)
+      return next
+    })
     setText('')
   }
 

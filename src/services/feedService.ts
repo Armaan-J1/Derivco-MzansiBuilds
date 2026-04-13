@@ -36,6 +36,7 @@ function docToFeedItem(id: string, d: Record<string, unknown>): FeedItem {
       createdAt: d.createdAt ? (d.createdAt as Timestamp).toDate().toISOString().slice(0, 10) : '',
     },
     comments: [],
+    commentCount: (d.commentCount as number) ?? 0,
     raiseHandCount: (d.raiseHandCount as number) ?? 0,
     raisedByMe: false,
     raiseHandRequests: [],

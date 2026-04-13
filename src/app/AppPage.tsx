@@ -56,8 +56,10 @@ export default function AppPage() {
   }, [user])
 
   useEffect(() => {
-    getCompletedProjects().then(setCompletedProjects)
-  }, [])
+    if (activeView === 'celebration') {
+      getCompletedProjects().then(setCompletedProjects)
+    }
+  }, [activeView])
 
   async function loadMore() {
     if (!feedLastDoc || feedLoading) return

@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp, doc, updateDoc, increment } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import type { Comment } from '../types'
 
@@ -29,6 +29,7 @@ export async function addComment(
     text,
     createdAt: serverTimestamp(),
   })
+  await updateDoc(doc(db, 'feedItems', feedItemId), { commentCount: increment(1) })
   return {
     id: ref.id,
     authorId,

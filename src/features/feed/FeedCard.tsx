@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { FeedItem } from '../../types'
+import { FeedItem, Milestone } from '../../types'
 import CommentThread from '../comments/CommentThread'
 import CollabRequests from '../collaboration/CollabRequests'
 import { getRaiseHandStatus, raiseHand, lowerHand, getRaiseHandRequests } from '../../services/raiseHandService'
 import type { RaiseHandRequest } from '../../services/raiseHandService'
+import { getProjectMilestones } from '../../services/projectService'
 import { useAuthStore } from '../auth/useAuthStore'
 
 interface Props {
@@ -39,10 +40,12 @@ export default function FeedCard({ item, currentUserId }: Props) {
   const { user } = useAuthStore()
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [requestsOpen, setRequestsOpen] = useState(false)
+  const [commentCount, setCommentCount] = useState(item.commentCount ?? 0)
   const [raisedByMe, setRaisedByMe] = useState(item.raisedByMe)
   const [raiseCount, setRaiseCount] = useState(item.raiseHandCount)
   const [hovered, setHovered] = useState(false)
   const [raiseHandRequests, setRaiseHandRequests] = useState<RaiseHandRequest[]>([])
+  const [milestones, setMilestones] = useState<Milestone[]>(item.project.milestones ?? [])
 
   const isOwner = item.project.ownerId === currentUserId
 
@@ -50,6 +53,11 @@ export default function FeedCard({ item, currentUserId }: Props) {
     if (!currentUserId || isOwner) return
     getRaiseHandStatus(item.id, currentUserId).then(setRaisedByMe)
   }, [item.id, currentUserId, isOwner])
+
+  useEffect(() => {
+    if ((item.project.milestones ?? []).length > 0) return
+    getProjectMilestones(item.project.id).then(setMilestones).catch(() => {})
+  }, [item.project.id, item.project.milestones])
 
   async function handleRaiseHand() {
     if (!user) return
@@ -87,6 +95,13 @@ export default function FeedCard({ item, currentUserId }: Props) {
     transition: 'none',
   }
 
+  function milestoneStatus(ms: Milestone): { label: string; color: string; filled: boolean } {
+    const today = new Date().toISOString().slice(0, 10)
+    if (ms.date < today) return { label: 'COMPLETED', color: '#22C55E', filled: true }
+    if (ms.date === today) return { label: 'IN PROGRESS', color: '#006E2F', filled: false }
+    return { label: 'BACKLOG', color: '#6b7280', filled: false }
+  }
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -97,8 +112,11 @@ export default function FeedCard({ item, currentUserId }: Props) {
         transform: hovered ? 'translate(-2px, -2px)' : 'none',
         boxShadow: hovered ? '6px 6px 0px 0px rgba(0,110,47,1)' : 'none',
         transition: 'none',
+        display: 'flex',
       }}
     >
+      {/* ── LEFT: main content ── */}
+      <div style={{ width: '760px', minWidth: '760px', flexShrink: 0 }}>
       <div style={{ padding: '20px 22px 0' }}>
         {/* Type tag */}
         <span style={{
@@ -225,7 +243,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
               background: commentsOpen ? '#F3F4F5' : 'transparent',
             }}
           >
-            ◎ Comment ({item.comments.length})
+            ◎ Comments
           </button>
 
           {isOwner ? (
@@ -254,7 +272,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
 
       {commentsOpen && (
         <div style={{ borderTop: '2px solid #111827' }}>
-          <CommentThread feedItemId={item.id} initialComments={item.comments} currentUserId={currentUserId} />
+          <CommentThread feedItemId={item.id} initialComments={item.comments} currentUserId={currentUserId} onCountChange={setCommentCount} />
         </div>
       )}
 
@@ -263,6 +281,92 @@ export default function FeedCard({ item, currentUserId }: Props) {
           <CollabRequests feedItemId={item.id} requests={raiseHandRequests} isOwner={isOwner} />
         </div>
       )}
+      </div>{/* end left column */}
+
+      {/* ── RIGHT: trace log ── */}
+      <div style={{
+        flex: 1,
+        minWidth: '200px',
+        borderLeft: '2px solid #111827',
+        background: '#0d0f10',
+        padding: '16px 14px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0',
+        fontFamily: "'Courier New', Courier, monospace",
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          paddingBottom: '12px',
+          borderBottom: '1px solid #1f2937',
+        }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', color: '#d1d5db', textTransform: 'uppercase' }}>
+            TRACE LOG
+          </span>
+          <span style={{ fontSize: '0.65rem', color: '#22C55E', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Live
+          </span>
+        </div>
+
+        {/* Milestone entries */}
+        {milestones.length === 0 ? (
+          <div style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic', paddingLeft: '20px' }}>
+            // no milestones yet
+          </div>
+        ) : (
+          <div style={{ position: 'relative' }}>
+            {/* vertical line */}
+            <div style={{
+              position: 'absolute',
+              left: '6px',
+              top: '8px',
+              bottom: '8px',
+              width: '1px',
+              background: '#1f2937',
+            }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {milestones.map((ms) => {
+                const { label, color, filled } = milestoneStatus(ms)
+                return (
+                  <div key={ms.id} style={{ paddingLeft: '24px', position: 'relative' }}>
+                    {/* dot */}
+                    <div style={{
+                      position: 'absolute',
+                      left: '0px',
+                      top: '4px',
+                      width: '13px',
+                      height: '13px',
+                      border: `2px solid ${color}`,
+                      background: filled ? color : 'transparent',
+                      flexShrink: 0,
+                    }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '8px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', color, textTransform: 'uppercase' }}>
+                        STATUS: {label}
+                      </span>
+                      <span style={{ fontSize: '0.62rem', color: '#6b7280', letterSpacing: '0.04em', whiteSpace: 'nowrap' as const }}>
+                        {ms.date}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#f9fafb', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px', lineHeight: 1.3 }}>
+                      {ms.title}
+                    </div>
+                    {ms.description && (
+                      <p style={{ fontSize: '0.72rem', color: '#9ca3af', lineHeight: 1.6, margin: 0 }}>
+                        {ms.description}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

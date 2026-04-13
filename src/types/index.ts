@@ -43,6 +43,7 @@ export interface FeedItem {
   type: 'new_project' | 'update';
   project: Project;
   comments: Comment[];
+  commentCount: number;
   raiseHandCount: number;
   raisedByMe: boolean;
   raiseHandRequests: { userId: string; userName: string; email: string; note: string }[];
