@@ -1,14 +1,10 @@
 import { useState } from 'react'
-
-interface Request {
-  userId: string
-  userName: string
-  email: string
-  note: string
-}
+import { updateRequestStatus } from '../../services/raiseHandService'
+import type { RaiseHandRequest } from '../../services/raiseHandService'
 
 interface Props {
-  requests: Request[]
+  feedItemId: string
+  requests: RaiseHandRequest[]
   isOwner: boolean
 }
 
@@ -16,11 +12,24 @@ function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function CollabRequests({ requests, isOwner }: Props) {
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
-  const [accepted, setAccepted] = useState<Set<string>>(new Set())
+export default function CollabRequests({ feedItemId, requests, isOwner }: Props) {
+  const [localRequests, setLocalRequests] = useState<RaiseHandRequest[]>(requests)
+  const [accepted, setAccepted] = useState<Set<string>>(new Set(
+    requests.filter((r) => r.status === 'accepted').map((r) => r.userId)
+  ))
 
-  const visible = requests.filter((r) => !dismissed.has(r.userId))
+  async function handleAccept(userId: string) {
+    await updateRequestStatus(feedItemId, userId, 'accepted')
+    setAccepted((s) => new Set([...s, userId]))
+    setLocalRequests((prev) => prev.map((r) => r.userId === userId ? { ...r, status: 'accepted' } : r))
+  }
+
+  async function handleDismiss(userId: string) {
+    await updateRequestStatus(feedItemId, userId, 'dismissed')
+    setLocalRequests((prev) => prev.filter((r) => r.userId !== userId))
+  }
+
+  const visible = localRequests.filter((r) => r.status !== 'dismissed')
 
   return (
     <div style={{ padding: '16px 20px' }}>
@@ -124,7 +133,7 @@ export default function CollabRequests({ requests, isOwner }: Props) {
             {isOwner && !accepted.has(req.userId) && (
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                 <button
-                  onClick={() => setAccepted((s) => new Set([...s, req.userId]))}
+                  onClick={() => handleAccept(req.userId)}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -139,7 +148,7 @@ export default function CollabRequests({ requests, isOwner }: Props) {
                   Accept
                 </button>
                 <button
-                  onClick={() => setDismissed((s) => new Set([...s, req.userId]))}
+                  onClick={() => handleDismiss(req.userId)}
                   style={{
                     background: 'none',
                     border: 'none',

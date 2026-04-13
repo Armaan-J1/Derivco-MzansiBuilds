@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Milestone, Project } from '../../types'
+import { updateProject, addMilestone as addMilestoneService, markProjectComplete } from '../../services/projectService'
 
 interface Props {
   projects: Project[]
   onProjectsChange: (projects: Project[]) => void
+  currentUserId: string
+  updateFeedSnapshot: (
+    feedItemId: string,
+    snapshot: Partial<{
+      title: string
+      description: string
+      stage: string
+      supportRequired: string
+      githubUrl: string
+      githubVisible: boolean
+    }>
+  ) => Promise<void>
 }
 
 function stageBg(stage: string): string {
@@ -16,8 +29,6 @@ function stageBg(stage: string): string {
     default: return '#111827'
   }
 }
-
-let nextMilestoneId = 200
 
 export default function MyProjectsView({ projects: initialProjects, onProjectsChange }: Props) {
   const [projects, setProjects] = useState<Project[]>(initialProjects)
@@ -61,8 +72,16 @@ export default function MyProjectsView({ projects: initialProjects, onProjectsCh
     setAddingMilestone(false)
   }
 
-  function saveField(field: string) {
+  async function saveField(field: string) {
     if (!selected) return
+    const fields: Partial<Omit<Project, 'id' | 'milestones'>> = {}
+    if (field === 'title') fields.title = editTitle
+    if (field === 'desc') fields.description = editDesc
+    if (field === 'stage') fields.stage = editStage
+    if (field === 'support') fields.supportRequired = editSupport
+    if (field === 'github') fields.githubUrl = editGithubUrl
+
+    // Optimistic update
     commitProjects((prev) => prev.map((p) =>
       p.id === selected.id ? {
         ...p,
@@ -74,23 +93,31 @@ export default function MyProjectsView({ projects: initialProjects, onProjectsCh
       } : p
     ))
     setEditingField(null)
+
+    await updateProject(selected.id, fields)
   }
 
-  function toggleGithubVisibility() {
+  async function toggleGithubVisibility() {
     if (!selected) return
+    const newVisible = !selected.githubVisible
     commitProjects((prev) => prev.map((p) =>
-      p.id === selected.id ? { ...p, githubVisible: !p.githubVisible } : p
+      p.id === selected.id ? { ...p, githubVisible: newVisible } : p
     ))
+    await updateProject(selected.id, { githubVisible: newVisible })
   }
 
-  function addMilestone() {
+  async function addMilestone() {
     if (!selected || !msTitle.trim()) return
-    const ms: Milestone = {
-      id: String(nextMilestoneId++),
-      date: msDate || new Date().toISOString().slice(0, 10),
+    const milestoneDate = msDate || new Date().toISOString().slice(0, 10)
+    const milestoneData: Omit<Milestone, 'id'> = {
+      date: milestoneDate,
       title: msTitle.trim(),
       description: msDesc.trim(),
     }
+
+    const newId = await addMilestoneService(selected.id, milestoneData)
+    const ms: Milestone = { id: newId, ...milestoneData }
+
     commitProjects((prev) => prev.map((p) =>
       p.id === selected.id ? { ...p, milestones: [...p.milestones, ms] } : p
     ))
@@ -100,14 +127,17 @@ export default function MyProjectsView({ projects: initialProjects, onProjectsCh
     setAddingMilestone(false)
   }
 
-  function markComplete() {
+  async function markComplete() {
     if (!selected) return
+    const completedAt = new Date().toISOString().slice(0, 10)
+    // Optimistic update
     commitProjects((prev) => prev.map((p) =>
       p.id === selected.id
-        ? { ...p, stage: 'Complete', completedAt: new Date().toISOString().slice(0, 10) }
+        ? { ...p, stage: 'Complete', completedAt }
         : p
     ))
     setConfirmComplete(false)
+    await markProjectComplete(selected.id)
   }
 
   const inputStyle: React.CSSProperties = {

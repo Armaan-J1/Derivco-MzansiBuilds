@@ -1,12 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DotGrid from '../component/DotGrid'
-
-const MOCK_PROFILE = {
-  displayName: 'Alex Chen',
-  email: 'alex@example.com',
-  bio: 'Building in public since 2024. Working on CLI tools and developer productivity apps.',
-}
+import { useAuthStore } from '../features/auth/useAuthStore'
+import { getUser, updateUser } from '../services/userService'
+import { changePassword, deleteAccount, logout } from '../services/authService'
 
 function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -14,21 +11,80 @@ function getInitials(name: string): string {
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const [displayName, setDisplayName] = useState(MOCK_PROFILE.displayName)
-  const [bio, setBio] = useState(MOCK_PROFILE.bio)
+  const { user } = useAuthStore()
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '')
+  const [email, setEmail] = useState(user?.email ?? '')
+  const [bio, setBio] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [passwordExpanded, setPasswordExpanded] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [saveHover, setSaveHover] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [confirmDeletePassword, setConfirmDeletePassword] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  function handleSave(e: React.FormEvent) {
+  useEffect(() => {
+    if (!user) return
+    getUser(user.uid).then((profile) => {
+      if (profile) {
+        setDisplayName(profile.displayName)
+        setEmail(profile.email)
+        setBio(profile.bio)
+      }
+    })
+  }, [user])
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    setIsDirty(false)
+    if (!user) return
+    setSaveError('')
+    setSaveSuccess('')
+    try {
+      await updateUser(user.uid, { displayName, bio })
+      setIsDirty(false)
+      setSaveSuccess('Profile saved.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save'
+      setSaveError(msg)
+    }
   }
 
-  function handleLogout() {
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+    try {
+      await changePassword(currentPassword, newPassword)
+      setCurrentPassword('')
+      setNewPassword('')
+      setPasswordExpanded(false)
+      setPasswordSuccess('Password changed successfully.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to change password'
+      setPasswordError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim())
+    }
+  }
+
+  async function handleLogout() {
+    await logout()
     navigate('/')
+  }
+
+  async function handleDeleteAccount(e: React.FormEvent) {
+    e.preventDefault()
+    setDeleteError('')
+    try {
+      await deleteAccount(confirmDeletePassword)
+      navigate('/')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete account'
+      setDeleteError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim())
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -117,7 +173,7 @@ export default function ProfilePage() {
                 fontFamily: "'Courier New', monospace",
                 fontSize: '0.7rem', color: '#6b7280', marginTop: '6px',
               }}>
-                {MOCK_PROFILE.email}
+                {email}
               </p>
             </div>
           </div>
@@ -139,7 +195,7 @@ export default function ProfilePage() {
             {/* Email */}
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>Email</label>
-              <input type="email" value={MOCK_PROFILE.email} readOnly
+              <input type="email" value={email} readOnly
                 style={{ ...inputStyle, background: '#F3F4F5', cursor: 'not-allowed', border: '2px solid #E7E8E9' }} />
               <p style={{
                 marginTop: '5px', fontFamily: "'Courier New', monospace",
@@ -157,39 +213,6 @@ export default function ProfilePage() {
                 rows={3} style={{ ...inputStyle, resize: 'vertical' as const }}
                 onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
                 onBlur={(e) => (e.target.style.outline = 'none')} />
-            </div>
-
-            {/* Change password */}
-            <div style={{ marginBottom: '24px', borderTop: '2px solid #E7E8E9', paddingTop: '20px' }}>
-              <button type="button" onClick={() => setPasswordExpanded(!passwordExpanded)}
-                style={{
-                  background: 'none', border: 'none', padding: 0,
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: '0.7rem', fontWeight: 700,
-                  textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-                  cursor: 'pointer', color: '#191C1D',
-                  borderBottom: '2px solid #111827',
-                }}>
-                {passwordExpanded ? '▲ Hide' : '▼ Change password'}
-              </button>
-
-              {passwordExpanded && (
-                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {[
-                    { label: 'Current Password', value: currentPassword, setter: setCurrentPassword },
-                    { label: 'New Password', value: newPassword, setter: setNewPassword },
-                  ].map(({ label, value, setter }) => (
-                    <div key={label}>
-                      <label style={labelStyle}>{label}</label>
-                      <input type="password" value={value}
-                        onChange={(e) => { setter(e.target.value); setIsDirty(true) }}
-                        style={inputStyle} placeholder="••••••••"
-                        onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                        onBlur={(e) => (e.target.style.outline = 'none')} />
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Save */}
@@ -213,10 +236,74 @@ export default function ProfilePage() {
                 Save changes →
               </button>
             )}
+            {saveError && (
+              <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#DC2626', marginTop: '6px' }}>
+                {saveError}
+              </p>
+            )}
+            {saveSuccess && (
+              <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#22C55E', marginTop: '6px' }}>
+                {saveSuccess}
+              </p>
+            )}
           </form>
 
+          {/* Change password */}
+          <div style={{ marginTop: '24px', borderTop: '2px solid #E7E8E9', paddingTop: '20px' }}>
+            <button type="button" onClick={() => setPasswordExpanded(!passwordExpanded)}
+              style={{
+                background: 'none', border: 'none', padding: 0,
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.7rem', fontWeight: 700,
+                textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                cursor: 'pointer', color: '#191C1D',
+                borderBottom: '2px solid #111827',
+              }}>
+              {passwordExpanded ? '▲ Hide' : '▼ Change password'}
+            </button>
+
+            {passwordExpanded && (
+              <form onSubmit={handleChangePassword} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                  { label: 'Current Password', value: currentPassword, setter: setCurrentPassword },
+                  { label: 'New Password', value: newPassword, setter: setNewPassword },
+                ].map(({ label, value, setter }) => (
+                  <div key={label}>
+                    <label style={labelStyle}>{label}</label>
+                    <input type="password" value={value}
+                      onChange={(e) => setter(e.target.value)}
+                      style={inputStyle} placeholder="••••••••"
+                      onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                      onBlur={(e) => (e.target.style.outline = 'none')} />
+                  </div>
+                ))}
+                <button type="submit" style={{
+                  padding: '9px 20px', alignSelf: 'flex-start',
+                  background: '#22C55E', color: '#fff',
+                  border: '2px solid #111827',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.65rem', fontWeight: 700,
+                  textTransform: 'uppercase' as const, letterSpacing: '0.07em',
+                  cursor: 'pointer',
+                }}>
+                  Update password
+                </button>
+                {passwordError && (
+                  <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#DC2626' }}>
+                    {passwordError}
+                  </p>
+                )}
+                {passwordSuccess && (
+                  <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#22C55E' }}>
+                    {passwordSuccess}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+
           {/* Session */}
-          <div style={{ borderTop: '2px solid #E7E8E9', paddingTop: '20px', marginTop: '8px' }}>
+          <div style={{ borderTop: '2px solid #E7E8E9', paddingTop: '20px', marginTop: '24px' }}>
             <p style={{
               fontFamily: "'Courier New', monospace",
               fontSize: '0.6rem', fontWeight: 700,
@@ -235,6 +322,64 @@ export default function ProfilePage() {
             }}>
               Log out
             </button>
+          </div>
+
+          {/* Danger zone */}
+          <div style={{ borderTop: '2px solid #E7E8E9', paddingTop: '20px', marginTop: '20px' }}>
+            <p style={{
+              fontFamily: "'Courier New', monospace",
+              fontSize: '0.6rem', fontWeight: 700,
+              textTransform: 'uppercase' as const, letterSpacing: '0.15em',
+              marginBottom: '10px', color: '#DC2626',
+            }}>
+              Danger Zone
+            </p>
+            {!showDeleteConfirm ? (
+              <button type="button" onClick={() => setShowDeleteConfirm(true)} style={{
+                background: 'none', border: '2px solid #DC2626',
+                padding: '7px 16px',
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.65rem', fontWeight: 700,
+                textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                cursor: 'pointer', color: '#DC2626',
+              }}>
+                Delete account
+              </button>
+            ) : (
+              <form onSubmit={handleDeleteAccount} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#DC2626' }}>
+                  This is permanent. Enter your password to confirm.
+                </p>
+                <input type="password" value={confirmDeletePassword}
+                  onChange={(e) => setConfirmDeletePassword(e.target.value)}
+                  placeholder="••••••••" style={inputStyle}
+                  onFocus={(e) => (e.target.style.outline = '2px solid #DC2626')}
+                  onBlur={(e) => (e.target.style.outline = 'none')} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={{
+                    padding: '7px 16px', background: '#DC2626', color: '#fff',
+                    border: '2px solid #DC2626',
+                    fontFamily: "'Courier New', monospace", fontSize: '0.65rem', fontWeight: 700,
+                    textTransform: 'uppercase' as const, letterSpacing: '0.08em', cursor: 'pointer',
+                  }}>
+                    Confirm delete
+                  </button>
+                  <button type="button" onClick={() => setShowDeleteConfirm(false)} style={{
+                    padding: '7px 16px', background: 'none', color: '#191C1D',
+                    border: '2px solid #111827',
+                    fontFamily: "'Courier New', monospace", fontSize: '0.65rem', fontWeight: 700,
+                    textTransform: 'uppercase' as const, letterSpacing: '0.08em', cursor: 'pointer',
+                  }}>
+                    Cancel
+                  </button>
+                </div>
+                {deleteError && (
+                  <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#DC2626' }}>
+                    {deleteError}
+                  </p>
+                )}
+              </form>
+            )}
           </div>
         </div>
       </div>

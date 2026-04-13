@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Comment } from '../../types'
+import { getComments, addComment } from '../../services/commentService'
+import { useAuthStore } from '../auth/useAuthStore'
 
 interface Props {
+  feedItemId: string
   initialComments: Comment[]
   currentUserId: string
 }
@@ -10,28 +13,27 @@ function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-let nextId = 100
-
-export default function CommentThread({ initialComments, currentUserId }: Props) {
+export default function CommentThread({ feedItemId, initialComments, currentUserId }: Props) {
+  const { user } = useAuthStore()
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [submitHover, setSubmitHover] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    getComments(feedItemId).then(setComments)
+  }, [feedItemId])
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!text.trim()) {
       setError('Comment cannot be empty.')
       return
     }
+    if (!user) return
     setError('')
-    const newComment: Comment = {
-      id: String(nextId++),
-      authorId: currentUserId,
-      authorName: 'Alex Chen',
-      text: text.trim(),
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
+    const authorName = user.displayName ?? 'Anonymous'
+    const newComment = await addComment(feedItemId, currentUserId, authorName, text.trim())
     setComments((prev) => [...prev, newComment])
     setText('')
   }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DotGrid from '../component/DotGrid'
+import { login, register, resetPassword } from '../services/authService'
 
 type Tab = 'login' | 'register'
 
@@ -15,10 +16,42 @@ export default function AuthPage() {
   const [regConfirm, setRegConfirm] = useState('')
   const [regBuilding, setRegBuilding] = useState('')
   const [submitHover, setSubmitHover] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authSuccess, setAuthSuccess] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    navigate('/app')
+    setAuthError('')
+    setAuthSuccess('')
+    setLoading(true)
+    try {
+      if (tab === 'login') {
+        await login(loginEmail, loginPassword)
+      } else {
+        if (regPassword !== regConfirm) throw new Error('Passwords do not match')
+        await register(regName, regEmail, regPassword, regBuilding)
+      }
+      navigate('/app')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      setAuthError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim())
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!loginEmail) { setAuthError('Enter your email first'); return }
+    setAuthError('')
+    setAuthSuccess('')
+    try {
+      await resetPassword(loginEmail)
+      setAuthSuccess('Password reset email sent. Check your inbox.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      setAuthError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim())
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -182,7 +215,7 @@ export default function AuthPage() {
                     style={inputStyle} placeholder="••••••••"
                     onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
                     onBlur={(e) => (e.target.style.outline = 'none')} />
-                  <button type="button" style={{
+                  <button type="button" onClick={handleForgotPassword} style={{
                     alignSelf: 'flex-start', marginTop: '6px',
                     background: 'none', border: 'none',
                     fontFamily: "'Courier New', monospace",
@@ -225,12 +258,13 @@ export default function AuthPage() {
 
             <button
               type="submit"
+              disabled={loading}
               onMouseEnter={() => setSubmitHover(true)}
               onMouseLeave={() => setSubmitHover(false)}
               style={{
                 width: '100%',
                 padding: '13px 0',
-                background: submitHover ? '#111827' : '#22C55E',
+                background: loading ? '#9CA3AF' : submitHover ? '#111827' : '#22C55E',
                 color: '#fff',
                 border: '2px solid #111827',
                 fontFamily: "'Space Grotesk', sans-serif",
@@ -238,15 +272,38 @@ export default function AuthPage() {
                 fontWeight: 800,
                 textTransform: 'uppercase' as const,
                 letterSpacing: '0.1em',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: '8px',
-                boxShadow: submitHover ? 'none' : '4px 4px 0px 0px #111827',
-                transform: submitHover ? 'translate(4px, 4px)' : 'none',
+                boxShadow: submitHover && !loading ? 'none' : '4px 4px 0px 0px #111827',
+                transform: submitHover && !loading ? 'translate(4px, 4px)' : 'none',
                 transition: 'none',
               }}
             >
-              {tab === 'login' ? 'Sign in →' : 'Create account →'}
+              {loading ? 'Please wait...' : tab === 'login' ? 'Sign in →' : 'Create account →'}
             </button>
+
+            {authError && (
+              <p style={{
+                marginTop: '10px',
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.7rem',
+                color: '#DC2626',
+                letterSpacing: '0.03em',
+              }}>
+                {authError}
+              </p>
+            )}
+            {authSuccess && (
+              <p style={{
+                marginTop: '10px',
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.7rem',
+                color: '#22C55E',
+                letterSpacing: '0.03em',
+              }}>
+                {authSuccess}
+              </p>
+            )}
           </form>
         </div>
       </div>

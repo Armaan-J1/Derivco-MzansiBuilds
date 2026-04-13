@@ -1,205 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DotGrid from '../component/DotGrid'
-import { FeedItem, Project, User } from '../types'
+import { FeedItem, Project } from '../types'
 import CelebrationWallView from '../features/celebration/CelebrationWallView'
 import FeedView from '../features/feed/FeedView'
 import NewProjectPanel from '../features/projects/NewProjectPanel'
 import MyProjectsView from '../features/projects/MyProjectsView'
+import { useAuthStore } from '../features/auth/useAuthStore'
+import { logout } from '../services/authService'
+import { getFeed, createFeedItem, updateFeedItemSnapshot } from '../services/feedService'
+import { getMyProjects, createProject, getCompletedProjects } from '../services/projectService'
+import type { DocumentSnapshot } from 'firebase/firestore'
 
 type View = 'feed' | 'myprojects' | 'celebration' | 'newproject'
-
-const MOCK_USER: User = {
-  id: 'u1',
-  displayName: 'Alex Chen',
-  email: 'alex@example.com',
-  bio: 'Building in public since 2024',
-  avatarInitials: 'AC',
-}
-
-const INITIAL_FEED: FeedItem[] = [
-  {
-    id: 'f1',
-    type: 'new_project',
-    project: {
-      id: 'p1',
-      ownerId: 'u2',
-      ownerName: 'Jordan Lee',
-      title: 'DevLog - a developer journal',
-      description: 'A minimal journaling tool for developers to track progress publicly.',
-      stage: 'In Progress',
-      supportRequired: 'UI feedback',
-      githubUrl: 'https://github.com/jordan/devlog',
-      githubVisible: true,
-      milestones: [],
-      createdAt: '2026-04-10',
-    },
-    comments: [
-      { id: 'c1', authorId: 'u3', authorName: 'Sam K', text: 'Love this idea!', createdAt: '2026-04-10' },
-    ],
-    raiseHandCount: 3,
-    raisedByMe: false,
-    raiseHandRequests: [],
-    createdAt: '2026-04-10',
-  },
-  {
-    id: 'f2',
-    type: 'update',
-    project: {
-      id: 'p2',
-      ownerId: 'u1',
-      ownerName: 'Alex Chen',
-      title: 'CLI Snippet Manager',
-      description: 'Terminal-first tool for storing and searching code snippets.',
-      stage: 'Planning',
-      supportRequired: 'code review',
-      githubUrl: 'https://github.com/alex/snippet-manager',
-      githubVisible: true,
-      milestones: [],
-      createdAt: '2026-04-09',
-    },
-    comments: [],
-    raiseHandCount: 1,
-    raisedByMe: false,
-    raiseHandRequests: [{ userId: 'u4', userName: 'Dev Patel', email: 'dev.patel@example.com', note: 'I can help with the CLI architecture' }],
-    createdAt: '2026-04-09',
-  },
-  {
-    id: 'f3',
-    type: 'new_project',
-    project: {
-      id: 'p3',
-      ownerId: 'u5',
-      ownerName: 'Riley Morgan',
-      title: 'OpenAPI Linter',
-      description: 'Validates and lints OpenAPI specs with custom rules.',
-      stage: 'Blocked',
-      supportRequired: 'finding a co-founder',
-      githubUrl: 'https://github.com/riley/openapi-linter',
-      githubVisible: false,
-      milestones: [],
-      createdAt: '2026-04-08',
-    },
-    comments: [],
-    raiseHandCount: 7,
-    raisedByMe: true,
-    raiseHandRequests: [],
-    createdAt: '2026-04-08',
-  },
-]
-
-const INITIAL_MY_PROJECTS: Project[] = [
-  {
-    id: 'p2',
-    ownerId: 'u1',
-    ownerName: 'Alex Chen',
-    title: 'CLI Snippet Manager',
-    description: 'Terminal-first tool for storing and searching code snippets.',
-    stage: 'Planning',
-    supportRequired: 'code review',
-    githubUrl: 'https://github.com/alex/snippet-manager',
-    githubVisible: true,
-    milestones: [
-      { id: 'm1', date: '2026-04-01', title: 'Repo setup', description: 'Initialized the project with Go modules.' },
-      { id: 'm2', date: '2026-04-08', title: 'Basic CLI structure', description: 'Added command parsing and help output.' },
-    ],
-    createdAt: '2026-04-09',
-  },
-  {
-    id: 'p4',
-    ownerId: 'u1',
-    ownerName: 'Alex Chen',
-    title: 'Markdown Resume Builder',
-    description: 'Generate beautiful resumes from markdown files.',
-    stage: 'Wrapping Up',
-    supportRequired: 'beta testers',
-    githubUrl: 'https://github.com/alex/markdown-resume-builder',
-    githubVisible: false,
-    milestones: [
-      { id: 'm3', date: '2026-03-20', title: 'MVP complete', description: 'First working version with HTML export.' },
-    ],
-    createdAt: '2026-03-15',
-  },
-]
-
-const INITIAL_COMPLETED: Project[] = [
-  {
-    id: 'p5',
-    ownerId: 'u6',
-    ownerName: 'Chris Wu',
-    title: 'Kernel_Optimizer_v2',
-    description: 'Refactored core scheduling engine reducing latency by 42% for edge compute clusters.',
-    stage: 'Complete',
-    supportRequired: '',
-    githubUrl: 'https://github.com/chris/kernel-optimizer-v2',
-    githubVisible: true,
-    milestones: [],
-    completedAt: '2026-04-05',
-    createdAt: '2026-02-01',
-    tags: ['#RUST', '#SYSTEMS'],
-  },
-  {
-    id: 'p6',
-    ownerId: 'u7',
-    ownerName: 'Priya Singh',
-    title: 'Neural_Canvas_UI',
-    description: 'A generative UI kit that adapts component density based on user attention heatmaps.',
-    stage: 'Complete',
-    supportRequired: '',
-    githubUrl: 'https://github.com/priya/neural-canvas-ui',
-    githubVisible: true,
-    milestones: [],
-    completedAt: '2026-04-02',
-    createdAt: '2026-03-01',
-    tags: ['#AI', '#DESIGN_SYSTEMS'],
-    featured: true,
-  },
-  {
-    id: 'p7',
-    ownerId: 'u8',
-    ownerName: 'Tom Nakamura',
-    title: 'HTTP Mock Server',
-    description: 'Lightweight mock server configurable via YAML with hot-reload.',
-    stage: 'Complete',
-    supportRequired: '',
-    githubUrl: 'https://github.com/tom/http-mock-server',
-    githubVisible: true,
-    milestones: [],
-    completedAt: '2026-03-28',
-    createdAt: '2026-02-15',
-    tags: ['#TYPESCRIPT', '#OSS'],
-  },
-  {
-    id: 'p8',
-    ownerId: 'u9',
-    ownerName: 'Lina Mendez',
-    title: 'Fin_Audit_Flow',
-    description: 'An immutable ledger system for tracking open-source contributions in real-time.',
-    stage: 'Complete',
-    supportRequired: '',
-    githubUrl: 'https://github.com/lina/fin-audit-flow',
-    githubVisible: false,
-    milestones: [],
-    completedAt: '2026-03-15',
-    createdAt: '2026-01-20',
-    tags: ['#FINTECH', '#WEB3'],
-  },
-  {
-    id: 'p9',
-    ownerId: 'u10',
-    ownerName: 'Marc Kovic',
-    title: 'Stream_Pulse_Lib',
-    description: 'Lightweight WebSocket wrapper with automatic failover and zero-allocation parsing.',
-    stage: 'Complete',
-    supportRequired: '',
-    githubUrl: 'https://github.com/marc/stream-pulse-lib',
-    githubVisible: true,
-    milestones: [],
-    completedAt: '2026-03-10',
-    createdAt: '2026-01-05',
-    tags: ['#TYPESCRIPT', '#OSS'],
-  },
-]
 
 const NAV_ICONS: Record<View, string> = {
   feed: '*',
@@ -210,12 +23,53 @@ const NAV_ICONS: Record<View, string> = {
 
 export default function AppPage() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [activeView, setActiveView] = useState<View>('feed')
   const [signOutHover, setSignOutHover] = useState(false)
   const [newProjectHover, setNewProjectHover] = useState(false)
-  const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED)
-  const [myProjects, setMyProjects] = useState<Project[]>(INITIAL_MY_PROJECTS)
-  const [completedProjects, setCompletedProjects] = useState<Project[]>(INITIAL_COMPLETED)
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([])
+  const [myProjects, setMyProjects] = useState<Project[]>([])
+  const [completedProjects, setCompletedProjects] = useState<Project[]>([])
+  const [feedLastDoc, setFeedLastDoc] = useState<DocumentSnapshot | null>(null)
+  const [feedLoading, setFeedLoading] = useState(false)
+
+  // Compute avatar initials from auth user
+  const displayName = user?.displayName ?? ''
+  const avatarInitials = displayName
+    .split(' ')
+    .map((n) => n[0] ?? '')
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '??'
+
+  useEffect(() => {
+    setFeedLoading(true)
+    getFeed(10).then(({ items, lastDoc }) => {
+      setFeedItems(items)
+      setFeedLastDoc(lastDoc)
+    }).finally(() => setFeedLoading(false))
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    getMyProjects(user.uid).then(setMyProjects)
+  }, [user])
+
+  useEffect(() => {
+    getCompletedProjects().then(setCompletedProjects)
+  }, [])
+
+  async function loadMore() {
+    if (!feedLastDoc || feedLoading) return
+    setFeedLoading(true)
+    try {
+      const { items, lastDoc } = await getFeed(10, feedLastDoc)
+      setFeedItems((prev) => [...prev, ...items])
+      setFeedLastDoc(lastDoc)
+    } finally {
+      setFeedLoading(false)
+    }
+  }
 
   function syncProjectAcrossViews(project: Project) {
     setFeedItems((prev) => prev.map((item) => (
@@ -231,7 +85,7 @@ export default function AppPage() {
     nextProjects.forEach(syncProjectAcrossViews)
   }
 
-  function handleCreateProject(project: {
+  async function handleCreateProject(project: {
     title: string
     description: string
     stage: Project['stage']
@@ -239,11 +93,21 @@ export default function AppPage() {
     githubUrl: string
     githubVisible: boolean
   }) {
+    if (!user) return
     const createdAt = new Date().toISOString().slice(0, 10)
+    const projectId = await createProject(user.uid, displayName, project)
+    const feedItemId = await createFeedItem(
+      'new_project',
+      projectId,
+      user.uid,
+      displayName,
+      project
+    )
+
     const newProject: Project = {
-      id: `p${Date.now()}`,
-      ownerId: MOCK_USER.id,
-      ownerName: MOCK_USER.displayName,
+      id: projectId,
+      ownerId: user.uid,
+      ownerName: displayName,
       title: project.title,
       description: project.description,
       stage: project.stage,
@@ -255,7 +119,7 @@ export default function AppPage() {
     }
 
     const newFeedItem: FeedItem = {
-      id: `f${Date.now()}`,
+      id: feedItemId,
       type: 'new_project',
       project: newProject,
       comments: [],
@@ -271,6 +135,11 @@ export default function AppPage() {
       setCompletedProjects((prev) => [newProject, ...prev])
     }
     setActiveView('myprojects')
+  }
+
+  async function handleSignOut() {
+    await logout()
+    navigate('/')
   }
 
   const navItems: { id: Exclude<View, 'newproject'>; label: string }[] = [
@@ -358,7 +227,7 @@ export default function AppPage() {
                 flexShrink: 0,
               }}
             >
-              {MOCK_USER.avatarInitials}
+              {avatarInitials}
             </div>
             <div>
               <div
@@ -370,7 +239,7 @@ export default function AppPage() {
                   letterSpacing: '0.05em',
                 }}
               >
-                {MOCK_USER.displayName}
+                {displayName}
               </div>
               <Link
                 to="/profile"
@@ -454,7 +323,7 @@ export default function AppPage() {
             + New Project
           </button>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleSignOut}
             onMouseEnter={() => setSignOutHover(true)}
             onMouseLeave={() => setSignOutHover(false)}
             style={{
@@ -559,9 +428,34 @@ export default function AppPage() {
           }}
         >
           {activeView === 'feed' ? (
-            <FeedView feedItems={feedItems} currentUserId={MOCK_USER.id} />
+            <>
+              <FeedView feedItems={feedItems} currentUserId={user?.uid ?? ''} />
+              {feedLastDoc && (
+                <button
+                  onClick={loadMore}
+                  disabled={feedLoading}
+                  style={{
+                    display: 'block', margin: '24px auto 0',
+                    padding: '10px 24px',
+                    background: 'transparent', color: '#191C1D',
+                    border: '2px solid #111827',
+                    fontFamily: "'Courier New', monospace",
+                    fontSize: '0.7rem', fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
+                    cursor: feedLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {feedLoading ? 'Loading...' : 'Load more'}
+                </button>
+              )}
+            </>
           ) : activeView === 'myprojects' ? (
-            <MyProjectsView projects={myProjects} onProjectsChange={handleProjectsChange} />
+            <MyProjectsView
+              projects={myProjects}
+              onProjectsChange={handleProjectsChange}
+              currentUserId={user?.uid ?? ''}
+              updateFeedSnapshot={updateFeedItemSnapshot}
+            />
           ) : activeView === 'newproject' ? (
             <NewProjectPanel onCreate={handleCreateProject} />
           ) : (

@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FeedItem } from '../../types'
 import CommentThread from '../comments/CommentThread'
 import CollabRequests from '../collaboration/CollabRequests'
+import { getRaiseHandStatus, raiseHand, lowerHand, getRaiseHandRequests } from '../../services/raiseHandService'
+import type { RaiseHandRequest } from '../../services/raiseHandService'
+import { useAuthStore } from '../auth/useAuthStore'
 
 interface Props {
   item: FeedItem
@@ -33,17 +36,42 @@ function getInitials(name: string): string {
 }
 
 export default function FeedCard({ item, currentUserId }: Props) {
+  const { user } = useAuthStore()
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [requestsOpen, setRequestsOpen] = useState(false)
   const [raisedByMe, setRaisedByMe] = useState(item.raisedByMe)
   const [raiseCount, setRaiseCount] = useState(item.raiseHandCount)
   const [hovered, setHovered] = useState(false)
+  const [raiseHandRequests, setRaiseHandRequests] = useState<RaiseHandRequest[]>([])
 
   const isOwner = item.project.ownerId === currentUserId
 
-  function handleRaiseHand() {
-    setRaisedByMe((r) => !r)
-    setRaiseCount((n) => (raisedByMe ? n - 1 : n + 1))
+  useEffect(() => {
+    if (!currentUserId || isOwner) return
+    getRaiseHandStatus(item.id, currentUserId).then(setRaisedByMe)
+  }, [item.id, currentUserId, isOwner])
+
+  async function handleRaiseHand() {
+    if (!user) return
+    const email = user.email ?? ''
+    const userName = user.displayName ?? ''
+    if (raisedByMe) {
+      setRaisedByMe(false)
+      setRaiseCount((n) => n - 1)
+      await lowerHand(item.id, currentUserId)
+    } else {
+      setRaisedByMe(true)
+      setRaiseCount((n) => n + 1)
+      await raiseHand(item.id, currentUserId, userName, email)
+    }
+  }
+
+  async function handleOpenRequests() {
+    setRequestsOpen((o) => !o)
+    if (!requestsOpen) {
+      const requests = await getRaiseHandRequests(item.id)
+      setRaiseHandRequests(requests)
+    }
   }
 
   const actionBtn: React.CSSProperties = {
@@ -202,10 +230,10 @@ export default function FeedCard({ item, currentUserId }: Props) {
 
           {isOwner ? (
             <button
-              onClick={() => setRequestsOpen((o) => !o)}
+              onClick={handleOpenRequests}
               style={{ ...actionBtn, background: requestsOpen ? '#F3F4F5' : 'transparent' }}
             >
-              ◈ See requests ({item.raiseHandRequests.length})
+              ◈ See requests ({raiseHandRequests.length})
             </button>
           ) : (
             <button
@@ -226,13 +254,13 @@ export default function FeedCard({ item, currentUserId }: Props) {
 
       {commentsOpen && (
         <div style={{ borderTop: '2px solid #111827' }}>
-          <CommentThread initialComments={item.comments} currentUserId={currentUserId} />
+          <CommentThread feedItemId={item.id} initialComments={item.comments} currentUserId={currentUserId} />
         </div>
       )}
 
       {requestsOpen && (
         <div style={{ borderTop: '2px solid #111827' }}>
-          <CollabRequests requests={item.raiseHandRequests} isOwner={isOwner} />
+          <CollabRequests feedItemId={item.id} requests={raiseHandRequests} isOwner={isOwner} />
         </div>
       )}
     </div>
