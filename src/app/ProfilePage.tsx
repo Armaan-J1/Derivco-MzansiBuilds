@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const MOCK_PROFILE = {
   displayName: 'Alex Chen',
@@ -12,6 +12,7 @@ function getInitials(name: string): string {
 }
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
   const [displayName, setDisplayName] = useState(MOCK_PROFILE.displayName)
   const [bio, setBio] = useState(MOCK_PROFILE.bio)
   const [isDirty, setIsDirty] = useState(false)
@@ -28,6 +29,10 @@ export default function ProfilePage() {
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setIsDirty(false)
+  }
+
+  function handleLogout() {
+    navigate('/')
   }
 
   const inputStyle: React.CSSProperties = {
@@ -210,25 +215,25 @@ export default function ProfilePage() {
             )}
           </form>
 
-          {/* Danger zone */}
+          {/* Session */}
           <div style={{ borderTop: '2px solid #E7E8E9', paddingTop: '20px', marginTop: '8px' }}>
             <p style={{
               fontFamily: "'Courier New', monospace",
               fontSize: '0.6rem', fontWeight: 700,
               textTransform: 'uppercase' as const, letterSpacing: '0.15em',
-              marginBottom: '10px', color: '#DC2626',
+              marginBottom: '10px', color: '#6b7280',
             }}>
-              Danger Zone
+              Session
             </p>
-            <button type="button" style={{
-              background: 'none', border: '2px solid #DC2626',
+            <button type="button" onClick={handleLogout} style={{
+              background: 'none', border: '2px solid #111827',
               padding: '7px 16px',
               fontFamily: "'Courier New', monospace",
               fontSize: '0.65rem', fontWeight: 700,
               textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-              cursor: 'pointer', color: '#DC2626',
+              cursor: 'pointer', color: '#191C1D',
             }}>
-              Delete account
+              Log out
             </button>
           </div>
         </div>

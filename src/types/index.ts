@@ -21,6 +21,8 @@ export interface Project {
   description: string;
   stage: 'Planning' | 'In Progress' | 'Blocked' | 'Wrapping Up' | 'Complete';
   supportRequired: string;
+  githubUrl: string;
+  githubVisible: boolean;
   milestones: Milestone[];
   completedAt?: string;
   createdAt: string;
@@ -43,6 +45,6 @@ export interface FeedItem {
   comments: Comment[];
   raiseHandCount: number;
   raisedByMe: boolean;
-  raiseHandRequests: { userId: string; userName: string; note: string }[];
+  raiseHandRequests: { userId: string; userName: string; email: string; note: string }[];
   createdAt: string;
 }

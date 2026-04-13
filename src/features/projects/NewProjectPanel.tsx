@@ -1,15 +1,26 @@
 import { useState } from 'react'
 import { Project } from '../../types'
 
-interface Props {
-  onSuccess: () => void
+interface DraftProject {
+  title: string
+  description: string
+  stage: Project['stage']
+  supportRequired: string
+  githubUrl: string
+  githubVisible: boolean
 }
 
-export default function NewProjectPanel({ onSuccess }: Props) {
+interface Props {
+  onCreate: (project: DraftProject) => void
+}
+
+export default function NewProjectPanel({ onCreate }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [stage, setStage] = useState<Project['stage']>('Planning')
   const [support, setSupport] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
+  const [githubVisible, setGithubVisible] = useState(true)
   const [submitHover, setSubmitHover] = useState(false)
 
   const stages: Project['stage'][] = ['Planning', 'In Progress', 'Blocked', 'Wrapping Up', 'Complete']
@@ -17,7 +28,22 @@ export default function NewProjectPanel({ onSuccess }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    onSuccess()
+
+    onCreate({
+      title: title.trim(),
+      description: description.trim(),
+      stage,
+      supportRequired: support.trim(),
+      githubUrl: githubUrl.trim(),
+      githubVisible,
+    })
+
+    setTitle('')
+    setDescription('')
+    setStage('Planning')
+    setSupport('')
+    setGithubUrl('')
+    setGithubVisible(true)
   }
 
   const inputStyle: React.CSSProperties = {
@@ -135,6 +161,47 @@ export default function NewProjectPanel({ onSuccess }: Props) {
               onBlur={(e) => (e.target.style.outline = 'none')}
             />
           </div>
+
+          <div>
+            <label style={labelStyle}>GitHub Repo</label>
+            <input
+              type="url"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              placeholder="https://github.com/username/repo"
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+              onBlur={(e) => (e.target.style.outline = 'none')}
+            />
+          </div>
+
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 14px',
+              border: '2px solid #111827',
+              background: '#F3F4F5',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={githubVisible}
+              onChange={(e) => setGithubVisible(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: '#22C55E' }}
+            />
+            <span style={{
+              fontFamily: "'Courier New', monospace",
+              fontSize: '0.7rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: '#191C1D',
+            }}>
+              Show repo publicly in feed and celebration wall
+            </span>
+          </label>
 
           <button
             type="submit"

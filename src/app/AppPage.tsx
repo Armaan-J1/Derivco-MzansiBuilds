@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FeedItem, Project, User } from '../types'
 import CelebrationWallView from '../features/celebration/CelebrationWallView'
 import FeedView from '../features/feed/FeedView'
@@ -16,7 +16,7 @@ const MOCK_USER: User = {
   avatarInitials: 'AC',
 }
 
-const MOCK_FEED: FeedItem[] = [
+const INITIAL_FEED: FeedItem[] = [
   {
     id: 'f1',
     type: 'new_project',
@@ -24,10 +24,12 @@ const MOCK_FEED: FeedItem[] = [
       id: 'p1',
       ownerId: 'u2',
       ownerName: 'Jordan Lee',
-      title: 'DevLog â€” a developer journal',
+      title: 'DevLog - a developer journal',
       description: 'A minimal journaling tool for developers to track progress publicly.',
       stage: 'In Progress',
       supportRequired: 'UI feedback',
+      githubUrl: 'https://github.com/jordan/devlog',
+      githubVisible: true,
       milestones: [],
       createdAt: '2026-04-10',
     },
@@ -50,13 +52,15 @@ const MOCK_FEED: FeedItem[] = [
       description: 'Terminal-first tool for storing and searching code snippets.',
       stage: 'Planning',
       supportRequired: 'code review',
+      githubUrl: 'https://github.com/alex/snippet-manager',
+      githubVisible: true,
       milestones: [],
       createdAt: '2026-04-09',
     },
     comments: [],
     raiseHandCount: 1,
     raisedByMe: false,
-    raiseHandRequests: [{ userId: 'u4', userName: 'Dev Patel', note: 'I can help with the CLI architecture' }],
+    raiseHandRequests: [{ userId: 'u4', userName: 'Dev Patel', email: 'dev.patel@example.com', note: 'I can help with the CLI architecture' }],
     createdAt: '2026-04-09',
   },
   {
@@ -70,6 +74,8 @@ const MOCK_FEED: FeedItem[] = [
       description: 'Validates and lints OpenAPI specs with custom rules.',
       stage: 'Blocked',
       supportRequired: 'finding a co-founder',
+      githubUrl: 'https://github.com/riley/openapi-linter',
+      githubVisible: false,
       milestones: [],
       createdAt: '2026-04-08',
     },
@@ -81,7 +87,7 @@ const MOCK_FEED: FeedItem[] = [
   },
 ]
 
-const MOCK_MY_PROJECTS: Project[] = [
+const INITIAL_MY_PROJECTS: Project[] = [
   {
     id: 'p2',
     ownerId: 'u1',
@@ -90,6 +96,8 @@ const MOCK_MY_PROJECTS: Project[] = [
     description: 'Terminal-first tool for storing and searching code snippets.',
     stage: 'Planning',
     supportRequired: 'code review',
+    githubUrl: 'https://github.com/alex/snippet-manager',
+    githubVisible: true,
     milestones: [
       { id: 'm1', date: '2026-04-01', title: 'Repo setup', description: 'Initialized the project with Go modules.' },
       { id: 'm2', date: '2026-04-08', title: 'Basic CLI structure', description: 'Added command parsing and help output.' },
@@ -104,6 +112,8 @@ const MOCK_MY_PROJECTS: Project[] = [
     description: 'Generate beautiful resumes from markdown files.',
     stage: 'Wrapping Up',
     supportRequired: 'beta testers',
+    githubUrl: 'https://github.com/alex/markdown-resume-builder',
+    githubVisible: false,
     milestones: [
       { id: 'm3', date: '2026-03-20', title: 'MVP complete', description: 'First working version with HTML export.' },
     ],
@@ -111,7 +121,7 @@ const MOCK_MY_PROJECTS: Project[] = [
   },
 ]
 
-const MOCK_COMPLETED: Project[] = [
+const INITIAL_COMPLETED: Project[] = [
   {
     id: 'p5',
     ownerId: 'u6',
@@ -120,6 +130,8 @@ const MOCK_COMPLETED: Project[] = [
     description: 'Refactored core scheduling engine reducing latency by 42% for edge compute clusters.',
     stage: 'Complete',
     supportRequired: '',
+    githubUrl: 'https://github.com/chris/kernel-optimizer-v2',
+    githubVisible: true,
     milestones: [],
     completedAt: '2026-04-05',
     createdAt: '2026-02-01',
@@ -133,6 +145,8 @@ const MOCK_COMPLETED: Project[] = [
     description: 'A generative UI kit that adapts component density based on user attention heatmaps.',
     stage: 'Complete',
     supportRequired: '',
+    githubUrl: 'https://github.com/priya/neural-canvas-ui',
+    githubVisible: true,
     milestones: [],
     completedAt: '2026-04-02',
     createdAt: '2026-03-01',
@@ -147,6 +161,8 @@ const MOCK_COMPLETED: Project[] = [
     description: 'Lightweight mock server configurable via YAML with hot-reload.',
     stage: 'Complete',
     supportRequired: '',
+    githubUrl: 'https://github.com/tom/http-mock-server',
+    githubVisible: true,
     milestones: [],
     completedAt: '2026-03-28',
     createdAt: '2026-02-15',
@@ -160,6 +176,8 @@ const MOCK_COMPLETED: Project[] = [
     description: 'An immutable ledger system for tracking open-source contributions in real-time.',
     stage: 'Complete',
     supportRequired: '',
+    githubUrl: 'https://github.com/lina/fin-audit-flow',
+    githubVisible: false,
     milestones: [],
     completedAt: '2026-03-15',
     createdAt: '2026-01-20',
@@ -173,6 +191,8 @@ const MOCK_COMPLETED: Project[] = [
     description: 'Lightweight WebSocket wrapper with automatic failover and zero-allocation parsing.',
     stage: 'Complete',
     supportRequired: '',
+    githubUrl: 'https://github.com/marc/stream-pulse-lib',
+    githubVisible: true,
     milestones: [],
     completedAt: '2026-03-10',
     createdAt: '2026-01-05',
@@ -188,14 +208,74 @@ const NAV_ICONS: Record<View, string> = {
 }
 
 export default function AppPage() {
+  const navigate = useNavigate()
   const [activeView, setActiveView] = useState<View>('feed')
   const [signOutHover, setSignOutHover] = useState(false)
   const [newProjectHover, setNewProjectHover] = useState(false)
   const [mouse, setMouse] = useState({ x: -9999, y: -9999 })
+  const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED)
+  const [myProjects, setMyProjects] = useState<Project[]>(INITIAL_MY_PROJECTS)
+  const [completedProjects, setCompletedProjects] = useState<Project[]>(INITIAL_COMPLETED)
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     setMouse({ x: e.clientX, y: e.clientY })
   }, [])
+
+  function syncProjectAcrossViews(project: Project) {
+    setFeedItems((prev) => prev.map((item) => (
+      item.project.id === project.id ? { ...item, project: { ...item.project, ...project } } : item
+    )))
+    setCompletedProjects((prev) => prev.map((item) => (
+      item.id === project.id ? { ...item, ...project } : item
+    )))
+  }
+
+  function handleProjectsChange(nextProjects: Project[]) {
+    setMyProjects(nextProjects)
+    nextProjects.forEach(syncProjectAcrossViews)
+  }
+
+  function handleCreateProject(project: {
+    title: string
+    description: string
+    stage: Project['stage']
+    supportRequired: string
+    githubUrl: string
+    githubVisible: boolean
+  }) {
+    const createdAt = new Date().toISOString().slice(0, 10)
+    const newProject: Project = {
+      id: `p${Date.now()}`,
+      ownerId: MOCK_USER.id,
+      ownerName: MOCK_USER.displayName,
+      title: project.title,
+      description: project.description,
+      stage: project.stage,
+      supportRequired: project.supportRequired,
+      githubUrl: project.githubUrl,
+      githubVisible: project.githubVisible,
+      milestones: [],
+      createdAt,
+    }
+
+    const newFeedItem: FeedItem = {
+      id: `f${Date.now()}`,
+      type: 'new_project',
+      project: newProject,
+      comments: [],
+      raiseHandCount: 0,
+      raisedByMe: false,
+      raiseHandRequests: [],
+      createdAt,
+    }
+
+    setMyProjects((prev) => [newProject, ...prev])
+    setFeedItems((prev) => [newFeedItem, ...prev])
+    if (newProject.stage === 'Complete') {
+      setCompletedProjects((prev) => [newProject, ...prev])
+    }
+    setActiveView('myprojects')
+  }
 
   const navItems: { id: Exclude<View, 'newproject'>; label: string }[] = [
     { id: 'feed', label: 'Feed' },
@@ -255,7 +335,7 @@ export default function AppPage() {
           zIndex: 10,
         }}
       >
-        <div style={{ padding: '20px 20px 16px', borderBottom: '2px solid #111827' }}>
+        <div style={{ padding: '20px 20px 20px', borderBottom: '2px solid #111827' }}>
           <div
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
@@ -271,7 +351,7 @@ export default function AppPage() {
           </div>
         </div>
 
-        <div style={{ padding: '16px 20px', borderBottom: '0px solid #111827' }}>
+        <div style={{ padding: '20px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -385,6 +465,7 @@ export default function AppPage() {
             + New Project
           </button>
           <button
+            onClick={() => navigate('/')}
             onMouseEnter={() => setSignOutHover(true)}
             onMouseLeave={() => setSignOutHover(false)}
             style={{
@@ -428,7 +509,7 @@ export default function AppPage() {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0 32px',
-            height: '60px',
+            height: '64px',
             background: 'rgba(248,249,250,0.85)',
             backdropFilter: 'blur(12px)',
             borderBottom: '2px solid #111827',
@@ -489,13 +570,13 @@ export default function AppPage() {
           }}
         >
           {activeView === 'feed' ? (
-            <FeedView feedItems={MOCK_FEED} currentUserId={MOCK_USER.id} />
+            <FeedView feedItems={feedItems} currentUserId={MOCK_USER.id} />
           ) : activeView === 'myprojects' ? (
-            <MyProjectsView projects={MOCK_MY_PROJECTS} />
+            <MyProjectsView projects={myProjects} onProjectsChange={handleProjectsChange} />
           ) : activeView === 'newproject' ? (
-            <NewProjectPanel onSuccess={() => setActiveView('feed')} />
+            <NewProjectPanel onCreate={handleCreateProject} />
           ) : (
-            <CelebrationWallView projects={MOCK_COMPLETED} />
+            <CelebrationWallView projects={completedProjects} />
           )}
         </div>
       </main>

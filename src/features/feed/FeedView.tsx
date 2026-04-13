@@ -74,6 +74,36 @@ export default function FeedView({ feedItems, currentUserId }: Props) {
           </button>
         </div>
       )}
+
+      <footer style={{
+        marginTop: '56px',
+        paddingTop: '24px',
+        borderTop: '2px solid #111827',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+      }}>
+        <span style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: '0.6rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em',
+          color: '#6b7280',
+        }}>
+          Feed stream // builders in motion
+        </span>
+        <span style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: '0.6rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em',
+          color: '#111827',
+        }}>
+          Visible cards: {visible.length}
+        </span>
+      </footer>
     </div>
   )
 }

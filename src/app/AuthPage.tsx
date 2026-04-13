@@ -81,20 +81,32 @@ export default function AuthPage() {
       }} />
 
       <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '440px' }}>
-        {/* Platform label above card */}
-        <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ height: '2px', width: '24px', background: '#22C55E' }} />
-          <span style={{
-            fontFamily: "'Courier New', monospace",
-            fontSize: '0.6rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.2em',
-            color: '#191C1D',
-          }}>
-            Build in Public Platform
-          </span>
-        </div>
+
+        {/* Top Branding */}
+<div style={{ textAlign: 'center', marginBottom: '24px' }}>
+  <h1 style={{
+    fontFamily: "'Space Grotesk', sans-serif",
+    fontSize: '3.2rem',
+    fontWeight: 900,
+    letterSpacing: '-0.04em',
+    textTransform: 'uppercase',
+    color: '#191C1D',
+    marginBottom: '6px',
+  }}>
+    MZANSIBUILDS
+  </h1>
+
+  <p style={{
+    fontFamily: "'Courier New', monospace",
+    fontSize: '0.85rem',
+    letterSpacing: '0.25em',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+  }}>
+    BUILD. UPDATE. CELEBRATE.
+  </p>
+</div>
+
 
         {/* Card */}
         <div style={{

@@ -164,6 +164,30 @@ export default function FeedCard({ item, currentUserId }: Props) {
           </p>
         )}
 
+        {item.project.githubVisible && item.project.githubUrl && (
+          <div style={{ marginBottom: '18px' }}>
+            <a
+              href={item.project.githubUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: '#006E2F',
+                textDecoration: 'underline',
+              }}
+            >
+              GitHub Repo {'->'}
+            </a>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: '8px', paddingBottom: '18px', flexWrap: 'wrap' as const }}>
           <button

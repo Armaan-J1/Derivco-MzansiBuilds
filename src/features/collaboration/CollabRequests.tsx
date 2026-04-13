@@ -3,6 +3,7 @@ import { useState } from 'react'
 interface Request {
   userId: string
   userName: string
+  email: string
   note: string
 }
 
@@ -89,6 +90,34 @@ export default function CollabRequests({ requests, isOwner }: Props) {
               </div>
               {req.note && (
                 <p style={{ fontSize: '0.8125rem', marginTop: '3px', color: '#191C1D' }}>{req.note}</p>
+              )}
+              {accepted.has(req.userId) && (
+                <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' as const }}>
+                  <span style={{
+                    fontFamily: "'Courier New', Courier, monospace",
+                    fontSize: '0.65rem',
+                    color: '#191C1D',
+                  }}>
+                    {req.email}
+                  </span>
+                  <a
+                    href={`mailto:${req.email}`}
+                    style={{
+                      padding: '5px 10px',
+                      border: '1px solid #111827',
+                      background: '#fff',
+                      fontFamily: "'Courier New', Courier, monospace",
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: '#191C1D',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Email
+                  </a>
+                </div>
               )}
             </div>
 

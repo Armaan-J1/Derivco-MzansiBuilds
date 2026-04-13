@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Milestone, Project } from '../../types'
 
 interface Props {
   projects: Project[]
+  onProjectsChange: (projects: Project[]) => void
 }
 
 function stageBg(stage: string): string {
@@ -18,7 +19,7 @@ function stageBg(stage: string): string {
 
 let nextMilestoneId = 200
 
-export default function MyProjectsView({ projects: initialProjects }: Props) {
+export default function MyProjectsView({ projects: initialProjects, onProjectsChange }: Props) {
   const [projects, setProjects] = useState<Project[]>(initialProjects)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -26,6 +27,7 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
   const [editDesc, setEditDesc] = useState('')
   const [editStage, setEditStage] = useState<Project['stage']>('Planning')
   const [editSupport, setEditSupport] = useState('')
+  const [editGithubUrl, setEditGithubUrl] = useState('')
   const [addingMilestone, setAddingMilestone] = useState(false)
   const [msDate, setMsDate] = useState('')
   const [msTitle, setMsTitle] = useState('')
@@ -33,26 +35,52 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [rowHover, setRowHover] = useState<string | null>(null)
 
+  useEffect(() => {
+    setProjects(initialProjects)
+  }, [initialProjects])
+
   const selected = projects.find((p) => p.id === selectedId) ?? null
 
+  function commitProjects(updater: (items: Project[]) => Project[]) {
+    setProjects((prev) => {
+      const next = updater(prev)
+      onProjectsChange(next)
+      return next
+    })
+  }
+
   function selectProject(p: Project) {
-    setSelectedId(p.id); setEditTitle(p.title); setEditDesc(p.description)
-    setEditStage(p.stage); setEditSupport(p.supportRequired)
-    setEditingField(null); setConfirmComplete(false); setAddingMilestone(false)
+    setSelectedId(p.id)
+    setEditTitle(p.title)
+    setEditDesc(p.description)
+    setEditStage(p.stage)
+    setEditSupport(p.supportRequired)
+    setEditGithubUrl(p.githubUrl)
+    setEditingField(null)
+    setConfirmComplete(false)
+    setAddingMilestone(false)
   }
 
   function saveField(field: string) {
     if (!selected) return
-    setProjects((prev) => prev.map((p) =>
+    commitProjects((prev) => prev.map((p) =>
       p.id === selected.id ? {
         ...p,
         title: field === 'title' ? editTitle : p.title,
         description: field === 'desc' ? editDesc : p.description,
         stage: field === 'stage' ? editStage : p.stage,
         supportRequired: field === 'support' ? editSupport : p.supportRequired,
+        githubUrl: field === 'github' ? editGithubUrl : p.githubUrl,
       } : p
     ))
     setEditingField(null)
+  }
+
+  function toggleGithubVisibility() {
+    if (!selected) return
+    commitProjects((prev) => prev.map((p) =>
+      p.id === selected.id ? { ...p, githubVisible: !p.githubVisible } : p
+    ))
   }
 
   function addMilestone() {
@@ -63,15 +91,18 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
       title: msTitle.trim(),
       description: msDesc.trim(),
     }
-    setProjects((prev) => prev.map((p) =>
+    commitProjects((prev) => prev.map((p) =>
       p.id === selected.id ? { ...p, milestones: [...p.milestones, ms] } : p
     ))
-    setMsDate(''); setMsTitle(''); setMsDesc(''); setAddingMilestone(false)
+    setMsDate('')
+    setMsTitle('')
+    setMsDesc('')
+    setAddingMilestone(false)
   }
 
   function markComplete() {
     if (!selected) return
-    setProjects((prev) => prev.map((p) =>
+    commitProjects((prev) => prev.map((p) =>
       p.id === selected.id
         ? { ...p, stage: 'Complete', completedAt: new Date().toISOString().slice(0, 10) }
         : p
@@ -90,7 +121,6 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
 
   return (
     <div style={{ maxWidth: '760px' }}>
-      {/* Section header */}
       <div style={{ marginBottom: '36px', borderBottom: '4px solid #111827', paddingBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <div style={{ height: '2px', width: '24px', background: '#22C55E' }} />
@@ -110,7 +140,6 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
         </h2>
       </div>
 
-      {/* Project list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '28px' }}>
         {projects.map((p) => {
           const isSelected = p.id === selectedId
@@ -181,11 +210,8 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
         })}
       </div>
 
-      {/* Detail panel */}
       {selected && (
         <div style={{ background: '#fff', border: '2px solid #111827', padding: '28px', boxShadow: '6px 6px 0px 0px #111827' }}>
-
-          {/* Title */}
           <div style={{ marginBottom: '20px' }}>
             {editingField === 'title' ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -208,12 +234,11 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
                 </h3>
                 <button onClick={() => setEditingField('title')}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E' }}
-                  title="Edit title">✎</button>
+                  title="Edit title">Edit</button>
               </div>
             )}
           </div>
 
-          {/* Description */}
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Description</label>
             {editingField === 'desc' ? (
@@ -232,12 +257,11 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#374151' }}>{selected.description}</p>
                 <button onClick={() => setEditingField('desc')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E', flexShrink: 0 }}>✎</button>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '0 4px', color: '#22C55E', flexShrink: 0 }}>Edit</button>
               </div>
             )}
           </div>
 
-          {/* Stage */}
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Stage</label>
             {editingField === 'stage' ? (
@@ -264,13 +288,12 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
                   {selected.stage}
                 </span>
                 <button onClick={() => setEditingField('stage')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E' }}>✎</button>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '0 4px', color: '#22C55E' }}>Edit</button>
               </div>
             )}
           </div>
 
-          {/* Support */}
-          <div style={{ marginBottom: '28px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Support Required</label>
             {editingField === 'support' ? (
               <div>
@@ -287,18 +310,76 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '0.9rem', fontStyle: 'italic', color: '#374151' }}>
-                  {selected.supportRequired || '—'}
+                  {selected.supportRequired || '-'}
                 </span>
                 <button onClick={() => setEditingField('support')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E' }}>✎</button>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '0 4px', color: '#22C55E' }}>Edit</button>
               </div>
             )}
           </div>
 
-          {/* Milestones */}
+          <div style={{ marginBottom: '28px' }}>
+            <label style={labelStyle}>GitHub Repo</label>
+            {editingField === 'github' ? (
+              <div>
+                <input value={editGithubUrl} onChange={(e) => setEditGithubUrl(e.target.value)}
+                  placeholder="https://github.com/username/repo"
+                  style={inputStyle}
+                  onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                  onBlur={(e) => (e.target.style.outline = 'none')}
+                  autoFocus />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' as const }}>
+                  <button onClick={() => saveField('github')} style={saveBtnStyle}>Save</button>
+                  <button onClick={() => setEditingField(null)} style={cancelBtnStyle}>Cancel</button>
+                  <button onClick={toggleGithubVisibility} style={cancelBtnStyle}>
+                    {selected.githubVisible ? 'Hide Public Link' : 'Show Public Link'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' as const }}>
+                {selected.githubUrl ? (
+                  <a
+                    href={selected.githubUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: '0.875rem',
+                      color: '#006E2F',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {selected.githubUrl}
+                  </a>
+                ) : (
+                  <span style={{ fontSize: '0.9rem', fontStyle: 'italic', color: '#374151' }}>
+                    No repo linked yet
+                  </span>
+                )}
+                <span style={{
+                  padding: '3px 10px',
+                  background: selected.githubVisible ? '#22C55E' : '#E7E8E9',
+                  color: selected.githubVisible ? '#fff' : '#191C1D',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                }}>
+                  {selected.githubVisible ? 'Public' : 'Hidden'}
+                </span>
+                <button onClick={() => setEditingField('github')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '0 4px', color: '#22C55E' }}>Edit</button>
+                <button onClick={toggleGithubVisibility}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '0 4px', color: '#191C1D', textDecoration: 'underline' }}>
+                  Toggle visibility
+                </button>
+              </div>
+            )}
+          </div>
+
           <div style={{ marginBottom: '28px' }}>
             <label style={labelStyle}>Milestones</label>
-
             {selected.milestones.length > 0 && (
               <div style={{ borderLeft: '3px solid #22C55E', paddingLeft: '20px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {selected.milestones.map((ms) => (
@@ -367,7 +448,6 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
             )}
           </div>
 
-          {/* Mark as complete */}
           {selected.stage !== 'Complete' && (
             confirmComplete ? (
               <div style={{ background: '#F3F4F5', padding: '18px', border: '2px solid #111827' }}>
@@ -394,6 +474,36 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
           )}
         </div>
       )}
+
+      <footer style={{
+        marginTop: '56px',
+        paddingTop: '24px',
+        borderTop: '2px solid #111827',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+      }}>
+        <span style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: '0.6rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em',
+          color: '#6b7280',
+        }}>
+          Project desk // iterate and ship
+        </span>
+        <span style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: '0.6rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em',
+          color: '#111827',
+        }}>
+          Active projects: {projects.length}
+        </span>
+      </footer>
     </div>
   )
 }

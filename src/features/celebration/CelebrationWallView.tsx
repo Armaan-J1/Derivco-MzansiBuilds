@@ -24,7 +24,6 @@ function getInitials(name: string): string {
 }
 
 export default function CelebrationWallView({ projects }: Props) {
-  const featured = projects.find((p) => p.featured)
   const rest = projects.filter((p) => !p.featured)
   const total = projects.length
 
@@ -114,7 +113,6 @@ export default function CelebrationWallView({ projects }: Props) {
         gap: '28px',
       }}>
         {rest.map((p) => <NormalCard key={p.id} project={p} />)}
-        {featured && <FeaturedCard project={featured} />}
       </div>
 
       {projects.length === 0 && (
@@ -171,9 +169,17 @@ export default function CelebrationWallView({ projects }: Props) {
 function NormalCard({ project }: { project: Project }) {
   const [hovered, setHovered] = useState(false)
   const palette = thumbPalette(project.id)
+  const isClickable = project.githubVisible && !!project.githubUrl
+
+  function handleOpenProject() {
+    if (isClickable) {
+      window.open(project.githubUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
 
   return (
     <div
+      onClick={handleOpenProject}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -185,7 +191,7 @@ function NormalCard({ project }: { project: Project }) {
         transform: hovered ? 'translate(-3px, -3px)' : 'none',
         boxShadow: hovered ? '8px 8px 0px 0px rgba(0,110,47,1)' : 'none',
         transition: 'none',
-        cursor: 'pointer',
+        cursor: isClickable ? 'pointer' : 'default',
       }}
     >
       {/* Thumbnail */}
@@ -292,6 +298,20 @@ function NormalCard({ project }: { project: Project }) {
           {project.description}
         </p>
 
+        {project.githubVisible && project.githubUrl && (
+          <span style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: '#006E2F',
+            marginBottom: '16px',
+          }}>
+            Open Repository {'->'}
+          </span>
+        )}
+
         {/* Footer row */}
         <div style={{
           display: 'flex',
@@ -316,104 +336,6 @@ function NormalCard({ project }: { project: Project }) {
             ↗
           </button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function FeaturedCard({ project }: { project: Project }) {
-  const [hovered, setHovered] = useState(false)
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: '#111827',
-        border: '2px solid #111827',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        transform: hovered ? 'translate(-3px, -3px)' : 'none',
-        boxShadow: hovered ? '8px 8px 0px 0px rgba(34,197,94,1)' : 'none',
-        transition: 'none',
-        cursor: 'pointer',
-        padding: '28px',
-      }}
-    >
-      {/* Top row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
-        <span style={{
-          background: '#22C55E',
-          color: '#fff',
-          fontFamily: "'Courier New', monospace",
-          fontSize: '0.6rem',
-          fontWeight: 700,
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          padding: '4px 10px',
-        }}>
-          Mzansi Original
-        </span>
-        <span style={{ fontSize: '1.5rem', color: '#22C55E' }}>✦</span>
-      </div>
-
-      {/* Title */}
-      <h3 style={{
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontWeight: 900,
-        fontSize: '2.25rem',
-        lineHeight: 0.95,
-        letterSpacing: '-0.04em',
-        color: '#fff',
-        marginBottom: '20px',
-        textTransform: 'uppercase',
-      }}>
-        {project.title}
-      </h3>
-
-      {/* Description */}
-      <p style={{
-        fontFamily: "'Courier New', monospace",
-        fontSize: '0.75rem',
-        lineHeight: 1.7,
-        color: '#9ca3af',
-        textTransform: 'uppercase',
-        letterSpacing: '0.03em',
-        marginBottom: '40px',
-        flex: 1,
-      }}>
-        "{project.description}"
-      </p>
-
-      {/* Community row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ display: 'flex' }}>
-          {['+12', 'MB'].map((label) => (
-            <div key={label} style={{
-              width: '28px', height: '28px',
-              background: '#374151',
-              border: '1px solid #4b5563',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Courier New', monospace",
-              fontSize: '0.55rem', fontWeight: 700,
-              color: '#fff',
-              marginLeft: '-4px',
-            }}>
-              {label}
-            </div>
-          ))}
-        </div>
-        <span style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: '0.6rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.2em',
-          fontWeight: 700,
-          color: '#6b7280',
-        }}>
-          Community Built
-        </span>
       </div>
     </div>
   )
