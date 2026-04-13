@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import AuthPage from './AuthPage'
-import AppPage from './AppPage'
-import ProfilePage from './ProfilePage'
+import AuthPage from './app/AuthPage'
+import AppPage from './app/AppPage'
+import ProfilePage from './app/ProfilePage'
 
 export default function App() {
   return (

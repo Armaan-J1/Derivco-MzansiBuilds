@@ -1,0 +1,133 @@
+import { useState } from 'react'
+
+interface Request {
+  userId: string
+  userName: string
+  note: string
+}
+
+interface Props {
+  requests: Request[]
+  isOwner: boolean
+}
+
+function getInitials(name: string): string {
+  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+}
+
+export default function CollabRequests({ requests, isOwner }: Props) {
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [accepted, setAccepted] = useState<Set<string>>(new Set())
+
+  const visible = requests.filter((r) => !dismissed.has(r.userId))
+
+  return (
+    <div style={{ padding: '16px 20px' }}>
+      <p
+        style={{
+          fontFamily: "'Courier New', Courier, monospace",
+          fontSize: '0.6875rem',
+          fontWeight: 700,
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.08em',
+          marginBottom: '12px',
+        }}
+      >
+        Collaboration Requests ({visible.length})
+      </p>
+
+      {visible.length === 0 && (
+        <p style={{ fontSize: '0.875rem', color: '#191C1D', fontStyle: 'italic' }}>No requests yet.</p>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {visible.map((req) => (
+          <div
+            key={req.userId}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              padding: '10px 12px',
+              background: '#F3F4F5',
+              border: accepted.has(req.userId) ? '1px solid #22C55E' : '1px solid #E7E8E9',
+            }}
+          >
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                background: '#E7E8E9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              {getInitials(req.userName)}
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' as const }}>
+                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{req.userName}</span>
+                {accepted.has(req.userId) && (
+                  <span
+                    style={{
+                      fontFamily: "'Courier New', Courier, monospace",
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      color: '#22C55E',
+                      textTransform: 'uppercase' as const,
+                    }}
+                  >
+                    Accepted
+                  </span>
+                )}
+              </div>
+              {req.note && (
+                <p style={{ fontSize: '0.8125rem', marginTop: '3px', color: '#191C1D' }}>{req.note}</p>
+              )}
+            </div>
+
+            {isOwner && !accepted.has(req.userId) && (
+              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <button
+                  onClick={() => setAccepted((s) => new Set([...s, req.userId]))}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    color: '#22C55E',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => setDismissed((s) => new Set([...s, req.userId]))}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: '0.8125rem',
+                    color: '#191C1D',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

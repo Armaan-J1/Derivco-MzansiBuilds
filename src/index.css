@@ -1,0 +1,36 @@
+:root {
+  --green: #22C55E;
+  --green-dark: #006E2F;
+  --surface: #FFFFFF;
+  --surface-low: #F3F4F5;
+  --surface-high: #E7E8E9;
+  --text: #191C1D;
+  --border: #111827;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  --font-body: Inter, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0 !important;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
