@@ -11,7 +11,6 @@ export default function NewProjectPanel({ onSuccess }: Props) {
   const [stage, setStage] = useState<Project['stage']>('Planning')
   const [support, setSupport] = useState('')
   const [submitHover, setSubmitHover] = useState(false)
-  const [backHover, setBackHover] = useState(false)
 
   const stages: Project['stage'][] = ['Planning', 'In Progress', 'Blocked', 'Wrapping Up', 'Complete']
 
@@ -22,118 +21,96 @@ export default function NewProjectPanel({ onSuccess }: Props) {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #111827',
-    fontSize: '0.9375rem',
-    outline: 'none',
-    background: '#fff',
-    color: '#191C1D',
-    fontFamily: 'inherit',
+    width: '100%', padding: '11px 12px',
+    border: '2px solid #111827', fontSize: '0.9375rem',
+    outline: 'none', background: '#fff',
+    color: '#191C1D', fontFamily: 'inherit',
   }
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
     fontFamily: "'Courier New', Courier, monospace",
-    fontSize: '0.6875rem',
-    fontWeight: 700,
+    fontSize: '0.65rem', fontWeight: 700,
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
-    marginBottom: '6px',
-    color: '#191C1D',
+    letterSpacing: '0.1em', marginBottom: '6px',
+    color: '#6b7280',
   }
 
   return (
-    <div style={{ maxWidth: '600px' }}>
-      {/* Back link */}
-      <button
-        onClick={onSuccess}
-        onMouseEnter={() => setBackHover(true)}
-        onMouseLeave={() => setBackHover(false)}
-        style={{
-          background: 'none',
-          border: 'none',
-          padding: 0,
-          fontSize: '0.875rem',
-          cursor: 'pointer',
-          textDecoration: backHover ? 'underline' : 'none',
-          marginBottom: '24px',
-          color: '#191C1D',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}
-      >
-        ← Back
-      </button>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Back */}
+      <div style={{ padding: '16px 20px', borderBottom: '2px solid #111827' }}>
+        <button
+          onClick={onSuccess}
+          style={{
+            background: 'none', border: 'none', padding: 0,
+            fontFamily: "'Courier New', monospace",
+            fontSize: '0.7rem', fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            cursor: 'pointer', color: '#191C1D',
+          }}
+        >
+          ← Back
+        </button>
+      </div>
 
-      <h2
-        style={{
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          marginBottom: '24px',
-          letterSpacing: '-0.01em',
-        }}
-      >
-        New Project
-      </h2>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '20px' }}>
+          <span style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '0.6rem', fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '0.15em',
+            color: '#22C55E',
+          }}>
+            // New Build
+          </span>
+          <h2 style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '1.5rem', fontWeight: 900,
+            letterSpacing: '-0.04em', textTransform: 'uppercase',
+            lineHeight: 0.95, marginTop: '6px', color: '#111827',
+          }}>
+            Post<br />Project
+          </h2>
+        </div>
 
-      <div style={{ background: '#fff', border: '1px solid #E7E8E9', padding: '28px' }}>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '18px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
             <label style={labelStyle}>Project Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="What are you building?"
-              style={inputStyle}
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="What are you building?" style={inputStyle}
               onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
               onBlur={(e) => (e.target.style.outline = 'none')}
-              required
-            />
+              required />
           </div>
 
-          <div style={{ marginBottom: '18px' }}>
+          <div>
             <label style={labelStyle}>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your project..."
-              rows={4}
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your project..." rows={4}
               style={{ ...inputStyle, resize: 'vertical' as const }}
               onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-              onBlur={(e) => (e.target.style.outline = 'none')}
-            />
+              onBlur={(e) => (e.target.style.outline = 'none')} />
           </div>
 
-          <div style={{ marginBottom: '18px' }}>
+          <div>
             <label style={labelStyle}>Stage</label>
-            <select
-              value={stage}
-              onChange={(e) => setStage(e.target.value as Project['stage'])}
+            <select value={stage} onChange={(e) => setStage(e.target.value as Project['stage'])}
               style={inputStyle}
               onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-              onBlur={(e) => (e.target.style.outline = 'none')}
-            >
-              {stages.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              onBlur={(e) => (e.target.style.outline = 'none')}>
+              {stages.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          <div style={{ marginBottom: '28px' }}>
-            <label style={labelStyle}>What support do you need?</label>
-            <input
-              type="text"
-              value={support}
-              onChange={(e) => setSupport(e.target.value)}
-              placeholder="e.g. code review, beta testers, UI feedback"
+          <div>
+            <label style={labelStyle}>Support Needed</label>
+            <input type="text" value={support} onChange={(e) => setSupport(e.target.value)}
+              placeholder="e.g. code review, UI feedback"
               style={inputStyle}
               onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-              onBlur={(e) => (e.target.style.outline = 'none')}
-            />
+              onBlur={(e) => (e.target.style.outline = 'none')} />
           </div>
 
           <button
@@ -141,20 +118,20 @@ export default function NewProjectPanel({ onSuccess }: Props) {
             onMouseEnter={() => setSubmitHover(true)}
             onMouseLeave={() => setSubmitHover(false)}
             style={{
-              width: '100%',
               padding: '12px 0',
-              background: submitHover ? '#006E2F' : '#22C55E',
+              background: submitHover ? '#111827' : '#22C55E',
               color: '#fff',
-              border: 'none',
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.08em',
+              border: '2px solid #111827',
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: '0.75rem', fontWeight: 800,
+              textTransform: 'uppercase' as const, letterSpacing: '0.1em',
               cursor: 'pointer',
+              boxShadow: submitHover ? 'none' : '4px 4px 0px 0px #111827',
+              transform: submitHover ? 'translate(4px,4px)' : 'none',
+              transition: 'none',
             }}
           >
-            Post Project
+            Post Project →
           </button>
         </form>
       </div>

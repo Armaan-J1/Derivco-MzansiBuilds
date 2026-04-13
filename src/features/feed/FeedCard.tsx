@@ -11,14 +11,13 @@ interface Props {
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000)
   if (diffDays === 0) return 'today'
   if (diffDays === 1) return '1 day ago'
   return `${diffDays} days ago`
 }
 
-function stageBgColor(stage: string): string {
+function stageBg(stage: string): string {
   switch (stage) {
     case 'In Progress': return '#22C55E'
     case 'Blocked': return '#DC2626'
@@ -38,200 +37,161 @@ export default function FeedCard({ item, currentUserId }: Props) {
   const [requestsOpen, setRequestsOpen] = useState(false)
   const [raisedByMe, setRaisedByMe] = useState(item.raisedByMe)
   const [raiseCount, setRaiseCount] = useState(item.raiseHandCount)
-  const [commentHover, setCommentHover] = useState(false)
-  const [raiseHover, setRaiseHover] = useState(false)
-  const [requestsHover, setRequestsHover] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   const isOwner = item.project.ownerId === currentUserId
 
   function handleRaiseHand() {
-    if (raisedByMe) {
-      setRaisedByMe(false)
-      setRaiseCount((n) => n - 1)
-    } else {
-      setRaisedByMe(true)
-      setRaiseCount((n) => n + 1)
-    }
+    setRaisedByMe((r) => !r)
+    setRaiseCount((n) => (raisedByMe ? n - 1 : n + 1))
+  }
+
+  const actionBtn: React.CSSProperties = {
+    padding: '7px 16px',
+    background: 'transparent',
+    color: '#191C1D',
+    border: '2px solid #111827',
+    fontFamily: "'Courier New', Courier, monospace",
+    fontSize: '0.65rem', fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.07em',
+    cursor: 'pointer',
+    transition: 'none',
   }
 
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         background: '#fff',
-        border: '1px solid #E7E8E9',
+        border: '2px solid #111827',
+        transform: hovered ? 'translate(-2px, -2px)' : 'none',
+        boxShadow: hovered ? '6px 6px 0px 0px rgba(0,110,47,1)' : 'none',
+        transition: 'none',
       }}
     >
-      {/* Card top: type tag */}
-      <div style={{ padding: '16px 20px 0' }}>
-        <span
-          style={{
-            display: 'inline-block',
-            padding: '2px 8px',
-            background: item.type === 'new_project' ? '#22C55E' : 'transparent',
-            border: item.type === 'update' ? '1px solid #111827' : 'none',
-            color: item.type === 'new_project' ? '#fff' : '#191C1D',
-            fontFamily: "'Courier New', Courier, monospace",
-            fontSize: '0.625rem',
-            fontWeight: 700,
-            textTransform: 'uppercase' as const,
-            letterSpacing: '0.1em',
-            marginBottom: '12px',
-          }}
-        >
+      <div style={{ padding: '20px 22px 0' }}>
+        {/* Type tag */}
+        <span style={{
+          display: 'inline-block',
+          padding: '3px 10px',
+          background: item.type === 'new_project' ? '#22C55E' : 'transparent',
+          border: item.type === 'update' ? '2px solid #111827' : 'none',
+          color: item.type === 'new_project' ? '#fff' : '#191C1D',
+          fontFamily: "'Courier New', monospace",
+          fontSize: '0.6rem', fontWeight: 700,
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.12em',
+          marginBottom: '14px',
+        }}>
           {item.type === 'new_project' ? 'new project' : 'update'}
         </span>
 
-        {/* Author row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              background: '#E7E8E9',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              flexShrink: 0,
-            }}
-          >
+        {/* Author */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+          <div style={{
+            width: '34px', height: '34px',
+            background: '#E7E8E9',
+            border: '2px solid #111827',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '0.7rem', fontWeight: 700, flexShrink: 0,
+          }}>
             {getInitials(item.project.ownerName)}
           </div>
           <div>
-            <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.project.ownerName}</span>
-            <span
-              style={{
-                marginLeft: '8px',
-                fontFamily: "'Courier New', Courier, monospace",
-                fontSize: '0.6875rem',
-                color: '#191C1D',
-              }}
-            >
+            <span style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 700, fontSize: '0.875rem',
+              textTransform: 'uppercase', letterSpacing: '0.03em',
+            }}>
+              {item.project.ownerName}
+            </span>
+            <span style={{
+              marginLeft: '8px',
+              fontFamily: "'Courier New', monospace",
+              fontSize: '0.65rem', color: '#6b7280',
+            }}>
               {timeAgo(item.createdAt)}
             </span>
           </div>
         </div>
 
-        {/* Project title + stage */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' as const }}>
-          <h3
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: '1.0625rem',
-              fontWeight: 600,
-              letterSpacing: '-0.01em',
-            }}
-          >
+        {/* Title + stage */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' as const }}>
+          <h3 style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '1.375rem',
+            fontWeight: 800,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+            color: '#111827',
+          }}>
             {item.project.title}
           </h3>
-          <span
-            style={{
-              padding: '2px 8px',
-              background: stageBgColor(item.project.stage),
-              color: '#fff',
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: '0.625rem',
-              fontWeight: 700,
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.08em',
-              whiteSpace: 'nowrap' as const,
-              alignSelf: 'center',
-            }}
-          >
+          <span style={{
+            padding: '3px 10px',
+            background: stageBg(item.project.stage),
+            color: '#fff',
+            fontFamily: "'Courier New', monospace",
+            fontSize: '0.6rem', fontWeight: 700,
+            textTransform: 'uppercase' as const,
+            letterSpacing: '0.08em',
+            whiteSpace: 'nowrap' as const,
+            alignSelf: 'center',
+            border: '1px solid rgba(0,0,0,0.15)',
+          }}>
             {item.project.stage}
           </span>
         </div>
 
         {/* Description */}
-        <p style={{ fontSize: '0.9rem', lineHeight: 1.55, marginBottom: '8px' }}>
+        <p style={{ fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '10px', color: '#374151' }}>
           {item.project.description}
         </p>
 
         {/* Looking for */}
         {item.project.supportRequired && (
-          <p
-            style={{
-              fontSize: '0.8125rem',
-              fontStyle: 'italic',
-              marginBottom: '16px',
-              color: '#191C1D',
-            }}
-          >
+          <p style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '0.75rem',
+            fontStyle: 'italic',
+            marginBottom: '18px',
+            color: '#6b7280',
+          }}>
             Looking for: {item.project.supportRequired}
           </p>
         )}
 
-        {/* Action row */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            paddingBottom: '16px',
-            flexWrap: 'wrap' as const,
-          }}
-        >
-          {/* Comment button */}
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '8px', paddingBottom: '18px', flexWrap: 'wrap' as const }}>
           <button
             onClick={() => setCommentsOpen((o) => !o)}
-            onMouseEnter={() => setCommentHover(true)}
-            onMouseLeave={() => setCommentHover(false)}
             style={{
-              padding: '7px 16px',
-              background: commentHover ? '#F3F4F5' : 'transparent',
-              color: '#191C1D',
-              border: '1px solid #111827',
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: '0.6875rem',
-              fontWeight: 600,
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.06em',
-              cursor: 'pointer',
+              ...actionBtn,
+              background: commentsOpen ? '#F3F4F5' : 'transparent',
             }}
           >
-            Comment ({item.comments.length})
+            ◎ Comment ({item.comments.length})
           </button>
 
-          {/* Raise hand or See requests */}
           {isOwner ? (
             <button
               onClick={() => setRequestsOpen((o) => !o)}
-              onMouseEnter={() => setRequestsHover(true)}
-              onMouseLeave={() => setRequestsHover(false)}
-              style={{
-                padding: '7px 16px',
-                background: requestsHover ? '#F3F4F5' : 'transparent',
-                color: '#191C1D',
-                border: '1px solid #111827',
-                fontFamily: "'Courier New', Courier, monospace",
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-                textTransform: 'uppercase' as const,
-                letterSpacing: '0.06em',
-                cursor: 'pointer',
-              }}
+              style={{ ...actionBtn, background: requestsOpen ? '#F3F4F5' : 'transparent' }}
             >
-              See requests ({item.raiseHandRequests.length})
+              ◈ See requests ({item.raiseHandRequests.length})
             </button>
           ) : (
             <button
               onClick={handleRaiseHand}
-              onMouseEnter={() => setRaiseHover(true)}
-              onMouseLeave={() => setRaiseHover(false)}
               style={{
-                padding: '7px 16px',
-                background: raisedByMe
-                  ? raiseHover ? '#006E2F' : '#22C55E'
-                  : raiseHover ? '#F3F4F5' : 'transparent',
+                ...actionBtn,
+                background: raisedByMe ? '#22C55E' : 'transparent',
                 color: raisedByMe ? '#fff' : '#191C1D',
-                border: raisedByMe ? 'none' : '1px solid #111827',
-                fontFamily: "'Courier New', Courier, monospace",
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-                textTransform: 'uppercase' as const,
-                letterSpacing: '0.06em',
-                cursor: 'pointer',
+                border: raisedByMe ? '2px solid #22C55E' : '2px solid #111827',
+                boxShadow: raisedByMe ? '3px 3px 0px 0px #006E2F' : 'none',
               }}
             >
               ✋ Raise Hand ({raiseCount})
@@ -240,16 +200,14 @@ export default function FeedCard({ item, currentUserId }: Props) {
         </div>
       </div>
 
-      {/* Comment thread */}
       {commentsOpen && (
-        <div style={{ borderTop: '1px solid #E7E8E9' }}>
+        <div style={{ borderTop: '2px solid #111827' }}>
           <CommentThread initialComments={item.comments} currentUserId={currentUserId} />
         </div>
       )}
 
-      {/* Collab requests */}
       {requestsOpen && (
-        <div style={{ borderTop: '1px solid #E7E8E9' }}>
+        <div style={{ borderTop: '2px solid #111827' }}>
           <CollabRequests requests={item.raiseHandRequests} isOwner={isOwner} />
         </div>
       )}

@@ -5,7 +5,7 @@ interface Props {
   projects: Project[]
 }
 
-function stageBgColor(stage: string): string {
+function stageBg(stage: string): string {
   switch (stage) {
     case 'In Progress': return '#22C55E'
     case 'Blocked': return '#DC2626'
@@ -22,50 +22,36 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
   const [projects, setProjects] = useState<Project[]>(initialProjects)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<string | null>(null)
-
-  // Edit state
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editStage, setEditStage] = useState<Project['stage']>('Planning')
   const [editSupport, setEditSupport] = useState('')
-
-  // Milestone
   const [addingMilestone, setAddingMilestone] = useState(false)
   const [msDate, setMsDate] = useState('')
   const [msTitle, setMsTitle] = useState('')
   const [msDesc, setMsDesc] = useState('')
-
-  // Complete confirmation
   const [confirmComplete, setConfirmComplete] = useState(false)
+  const [rowHover, setRowHover] = useState<string | null>(null)
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
 
   function selectProject(p: Project) {
-    setSelectedId(p.id)
-    setEditTitle(p.title)
-    setEditDesc(p.description)
-    setEditStage(p.stage)
-    setEditSupport(p.supportRequired)
-    setEditingField(null)
-    setConfirmComplete(false)
-    setAddingMilestone(false)
+    setSelectedId(p.id); setEditTitle(p.title); setEditDesc(p.description)
+    setEditStage(p.stage); setEditSupport(p.supportRequired)
+    setEditingField(null); setConfirmComplete(false); setAddingMilestone(false)
   }
 
   function saveField(field: string) {
     if (!selected) return
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === selected.id
-          ? {
-              ...p,
-              title: field === 'title' ? editTitle : p.title,
-              description: field === 'desc' ? editDesc : p.description,
-              stage: field === 'stage' ? editStage : p.stage,
-              supportRequired: field === 'support' ? editSupport : p.supportRequired,
-            }
-          : p
-      )
-    )
+    setProjects((prev) => prev.map((p) =>
+      p.id === selected.id ? {
+        ...p,
+        title: field === 'title' ? editTitle : p.title,
+        description: field === 'desc' ? editDesc : p.description,
+        stage: field === 'stage' ? editStage : p.stage,
+        supportRequired: field === 'support' ? editSupport : p.supportRequired,
+      } : p
+    ))
     setEditingField(null)
   }
 
@@ -77,114 +63,115 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
       title: msTitle.trim(),
       description: msDesc.trim(),
     }
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === selected.id ? { ...p, milestones: [...p.milestones, ms] } : p
-      )
-    )
-    setMsDate('')
-    setMsTitle('')
-    setMsDesc('')
-    setAddingMilestone(false)
+    setProjects((prev) => prev.map((p) =>
+      p.id === selected.id ? { ...p, milestones: [...p.milestones, ms] } : p
+    ))
+    setMsDate(''); setMsTitle(''); setMsDesc(''); setAddingMilestone(false)
   }
 
   function markComplete() {
     if (!selected) return
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === selected.id
-          ? { ...p, stage: 'Complete', completedAt: new Date().toISOString().slice(0, 10) }
-          : p
-      )
-    )
+    setProjects((prev) => prev.map((p) =>
+      p.id === selected.id
+        ? { ...p, stage: 'Complete', completedAt: new Date().toISOString().slice(0, 10) }
+        : p
+    ))
     setConfirmComplete(false)
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 10px',
-    border: '1px solid #111827',
-    fontSize: '0.9rem',
-    outline: 'none',
-    fontFamily: 'inherit',
-    background: '#fff',
-    color: '#191C1D',
+    width: '100%', padding: '9px 11px',
+    border: '2px solid #111827', fontSize: '0.9rem',
+    outline: 'none', fontFamily: 'inherit',
+    background: '#fff', color: '#191C1D',
   }
 
   const stages: Project['stage'][] = ['Planning', 'In Progress', 'Blocked', 'Wrapping Up', 'Complete']
 
   return (
-    <div style={{ maxWidth: '720px' }}>
-      <h2
-        style={{
+    <div style={{ maxWidth: '760px' }}>
+      {/* Section header */}
+      <div style={{ marginBottom: '36px', borderBottom: '4px solid #111827', paddingBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+          <div style={{ height: '2px', width: '24px', background: '#22C55E' }} />
+          <span style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '0.6rem', fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280',
+          }}>// My Projects</span>
+        </div>
+        <h2 style={{
           fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          marginBottom: '24px',
-          letterSpacing: '-0.01em',
-        }}
-      >
-        My Projects
-      </h2>
+          fontSize: 'clamp(2rem, 4vw, 3rem)',
+          fontWeight: 900, letterSpacing: '-0.04em',
+          lineHeight: 0.95, textTransform: 'uppercase', color: '#111827',
+        }}>
+          Your<br /><span style={{ color: '#22C55E' }}>Builds.</span>
+        </h2>
+      </div>
 
       {/* Project list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '28px' }}>
         {projects.map((p) => {
           const isSelected = p.id === selectedId
+          const isRowHovered = rowHover === p.id
           return (
             <div
               key={p.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                background: isSelected ? '#F3F4F5' : '#fff',
-                border: isSelected ? '1px solid #22C55E' : '1px solid #E7E8E9',
-                cursor: 'pointer',
-              }}
               onClick={() => selectProject(p)}
+              onMouseEnter={() => setRowHover(p.id)}
+              onMouseLeave={() => setRowHover(null)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '13px 16px',
+                background: isSelected ? '#22C55E' : '#fff',
+                border: '2px solid #111827',
+                cursor: 'pointer',
+                transform: isRowHovered && !isSelected ? 'translate(-2px,-2px)' : 'none',
+                boxShadow: isRowHovered && !isSelected ? '4px 4px 0px 0px #111827' : 'none',
+                transition: 'none',
+              }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{p.title}</span>
+                <span style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontWeight: 700, fontSize: '0.9375rem',
+                  textTransform: 'uppercase', letterSpacing: '-0.01em',
+                  color: isSelected ? '#fff' : '#111827',
+                }}>
+                  {p.title}
+                </span>
               </div>
-              <span
-                style={{
-                  padding: '2px 8px',
-                  background: stageBgColor(p.stage),
-                  color: '#fff',
-                  fontFamily: "'Courier New', Courier, monospace",
-                  fontSize: '0.5625rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.08em',
-                  whiteSpace: 'nowrap' as const,
-                }}
-              >
+              <span style={{
+                padding: '3px 10px',
+                background: isSelected ? '#fff' : stageBg(p.stage),
+                color: isSelected ? stageBg(p.stage) : '#fff',
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.6rem', fontWeight: 700,
+                textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                whiteSpace: 'nowrap' as const,
+                border: isSelected ? '2px solid rgba(0,0,0,0.1)' : 'none',
+              }}>
                 {p.stage}
               </span>
-              <span
-                style={{
-                  fontFamily: "'Courier New', Courier, monospace",
-                  fontSize: '0.6875rem',
-                  whiteSpace: 'nowrap' as const,
-                }}
-              >
-                {p.milestones.length} milestone{p.milestones.length !== 1 ? 's' : ''}
+              <span style={{
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.65rem', whiteSpace: 'nowrap' as const,
+                color: isSelected ? 'rgba(255,255,255,0.8)' : '#6b7280',
+              }}>
+                {p.milestones.length}ms
               </span>
               <button
                 onClick={(e) => { e.stopPropagation(); selectProject(p) }}
                 style={{
                   padding: '4px 12px',
-                  background: 'transparent',
-                  border: '1px solid #111827',
-                  fontFamily: "'Courier New', Courier, monospace",
-                  fontSize: '0.625rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.06em',
+                  background: isSelected ? '#fff' : 'transparent',
+                  border: `2px solid ${isSelected ? '#fff' : '#111827'}`,
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.6rem', fontWeight: 700,
+                  textTransform: 'uppercase' as const, letterSpacing: '0.06em',
                   cursor: 'pointer',
-                  color: '#191C1D',
+                  color: isSelected ? '#22C55E' : '#191C1D',
                 }}
               >
                 View
@@ -196,48 +183,32 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
 
       {/* Detail panel */}
       {selected && (
-        <div style={{ background: '#fff', border: '1px solid #E7E8E9', padding: '24px' }}>
+        <div style={{ background: '#fff', border: '2px solid #111827', padding: '28px', boxShadow: '6px 6px 0px 0px #111827' }}>
+
           {/* Title */}
           <div style={{ marginBottom: '20px' }}>
             {editingField === 'title' ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  style={{ ...inputStyle, fontSize: '1.125rem', fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}
+                <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                  style={{ ...inputStyle, fontSize: '1.125rem', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}
                   onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
                   onBlur={(e) => (e.target.style.outline = 'none')}
-                  autoFocus
-                />
-                <button onClick={() => saveField('title')} style={saveBtnStyle(false)}>Save</button>
+                  autoFocus />
+                <button onClick={() => saveField('title')} style={saveBtnStyle}>Save</button>
                 <button onClick={() => setEditingField(null)} style={cancelBtnStyle}>Cancel</button>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h3
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                  }}
-                >
+                <h3 style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: '1.375rem', fontWeight: 800,
+                  letterSpacing: '-0.03em', textTransform: 'uppercase', color: '#111827',
+                }}>
                   {selected.title}
                 </h3>
-                <button
-                  onClick={() => setEditingField('title')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    padding: '0 4px',
-                    color: '#191C1D',
-                  }}
-                  title="Edit title"
-                >
-                  ✎
-                </button>
+                <button onClick={() => setEditingField('title')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E' }}
+                  title="Edit title">✎</button>
               </div>
             )}
           </div>
@@ -247,29 +218,21 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
             <label style={labelStyle}>Description</label>
             {editingField === 'desc' ? (
               <div>
-                <textarea
-                  value={editDesc}
-                  onChange={(e) => setEditDesc(e.target.value)}
-                  rows={3}
-                  style={{ ...inputStyle, resize: 'vertical' as const }}
+                <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
+                  rows={3} style={{ ...inputStyle, resize: 'vertical' as const }}
                   onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
                   onBlur={(e) => (e.target.style.outline = 'none')}
-                  autoFocus
-                />
+                  autoFocus />
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                  <button onClick={() => saveField('desc')} style={saveBtnStyle(false)}>Save</button>
+                  <button onClick={() => saveField('desc')} style={saveBtnStyle}>Save</button>
                   <button onClick={() => setEditingField(null)} style={cancelBtnStyle}>Cancel</button>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <p style={{ fontSize: '0.9rem', lineHeight: 1.55 }}>{selected.description}</p>
-                <button
-                  onClick={() => setEditingField('desc')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: '0 4px', color: '#191C1D', flexShrink: 0 }}
-                >
-                  ✎
-                </button>
+                <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#374151' }}>{selected.description}</p>
+                <button onClick={() => setEditingField('desc')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E', flexShrink: 0 }}>✎</button>
               </div>
             )}
           </div>
@@ -279,96 +242,87 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
             <label style={labelStyle}>Stage</label>
             {editingField === 'stage' ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <select
-                  value={editStage}
-                  onChange={(e) => setEditStage(e.target.value as Project['stage'])}
+                <select value={editStage} onChange={(e) => setEditStage(e.target.value as Project['stage'])}
                   style={{ ...inputStyle, width: 'auto' }}
                   onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                  onBlur={(e) => (e.target.style.outline = 'none')}
-                >
+                  onBlur={(e) => (e.target.style.outline = 'none')}>
                   {stages.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <button onClick={() => saveField('stage')} style={saveBtnStyle(false)}>Save</button>
+                <button onClick={() => saveField('stage')} style={saveBtnStyle}>Save</button>
                 <button onClick={() => setEditingField(null)} style={cancelBtnStyle}>Cancel</button>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    padding: '2px 10px',
-                    background: stageBgColor(selected.stage),
-                    color: '#fff',
-                    fontFamily: "'Courier New', Courier, monospace",
-                    fontSize: '0.625rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase' as const,
-                    letterSpacing: '0.08em',
-                  }}
-                >
+                <span style={{
+                  display: 'inline-block', padding: '3px 12px',
+                  background: stageBg(selected.stage), color: '#fff',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.6rem', fontWeight: 700,
+                  textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                }}>
                   {selected.stage}
                 </span>
-                <button onClick={() => setEditingField('stage')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: '0 4px', color: '#191C1D' }}>✎</button>
+                <button onClick={() => setEditingField('stage')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E' }}>✎</button>
               </div>
             )}
           </div>
 
-          {/* Support required */}
-          <div style={{ marginBottom: '24px' }}>
+          {/* Support */}
+          <div style={{ marginBottom: '28px' }}>
             <label style={labelStyle}>Support Required</label>
             {editingField === 'support' ? (
               <div>
-                <input
-                  value={editSupport}
-                  onChange={(e) => setEditSupport(e.target.value)}
+                <input value={editSupport} onChange={(e) => setEditSupport(e.target.value)}
                   style={inputStyle}
                   onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
                   onBlur={(e) => (e.target.style.outline = 'none')}
-                  autoFocus
-                />
+                  autoFocus />
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                  <button onClick={() => saveField('support')} style={saveBtnStyle(false)}>Save</button>
+                  <button onClick={() => saveField('support')} style={saveBtnStyle}>Save</button>
                   <button onClick={() => setEditingField(null)} style={cancelBtnStyle}>Cancel</button>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>{selected.supportRequired || '—'}</span>
-                <button onClick={() => setEditingField('support')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: '0 4px', color: '#191C1D' }}>✎</button>
+                <span style={{ fontSize: '0.9rem', fontStyle: 'italic', color: '#374151' }}>
+                  {selected.supportRequired || '—'}
+                </span>
+                <button onClick={() => setEditingField('support')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', color: '#22C55E' }}>✎</button>
               </div>
             )}
           </div>
 
           {/* Milestones */}
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '28px' }}>
             <label style={labelStyle}>Milestones</label>
 
             {selected.milestones.length > 0 && (
-              <div
-                style={{
-                  borderLeft: '3px solid #22C55E',
-                  paddingLeft: '16px',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '16px',
-                }}
-              >
+              <div style={{ borderLeft: '3px solid #22C55E', paddingLeft: '20px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {selected.milestones.map((ms) => (
                   <div key={ms.id}>
-                    <div
-                      style={{
-                        fontFamily: "'Courier New', Courier, monospace",
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        marginBottom: '2px',
-                      }}
-                    >
+                    <div style={{
+                      fontFamily: "'Courier New', monospace",
+                      fontSize: '0.65rem', fontWeight: 700,
+                      color: '#22C55E', letterSpacing: '0.08em',
+                      marginBottom: '2px',
+                    }}>
                       {ms.date}
                     </div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9375rem', marginBottom: '2px' }}>{ms.title}</div>
+                    <div style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontWeight: 700, fontSize: '0.9375rem',
+                      textTransform: 'uppercase', letterSpacing: '-0.01em',
+                      marginBottom: '3px', color: '#111827',
+                    }}>
+                      {ms.title}
+                    </div>
                     {ms.description && (
-                      <p style={{ fontSize: '0.875rem', lineHeight: 1.5 }}>{ms.description}</p>
+                      <p style={{ fontSize: '0.875rem', lineHeight: 1.55, color: '#374151' }}>
+                        {ms.description}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -376,62 +330,38 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
             )}
 
             {addingMilestone ? (
-              <div style={{ background: '#F3F4F5', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                  <label style={labelStyle}>Date</label>
-                  <input
-                    type="date"
-                    value={msDate}
-                    onChange={(e) => setMsDate(e.target.value)}
-                    style={inputStyle}
-                    onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                    onBlur={(e) => (e.target.style.outline = 'none')}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Title</label>
-                  <input
-                    value={msTitle}
-                    onChange={(e) => setMsTitle(e.target.value)}
-                    placeholder="Milestone title"
-                    style={inputStyle}
-                    onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                    onBlur={(e) => (e.target.style.outline = 'none')}
-                  />
-                </div>
+              <div style={{ background: '#F3F4F5', padding: '18px', border: '2px solid #111827', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[
+                  { label: 'Date', type: 'date', value: msDate, setter: setMsDate, placeholder: '' },
+                  { label: 'Title', type: 'text', value: msTitle, setter: setMsTitle, placeholder: 'Milestone title' },
+                ].map(({ label, type, value, setter, placeholder }) => (
+                  <div key={label}>
+                    <label style={labelStyle}>{label}</label>
+                    <input type={type} value={value} onChange={(e) => setter(e.target.value)}
+                      placeholder={placeholder} style={inputStyle}
+                      onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                      onBlur={(e) => (e.target.style.outline = 'none')} />
+                  </div>
+                ))}
                 <div>
                   <label style={labelStyle}>Description</label>
-                  <textarea
-                    value={msDesc}
-                    onChange={(e) => setMsDesc(e.target.value)}
-                    rows={2}
-                    placeholder="What did you accomplish?"
-                    style={{ ...inputStyle, resize: 'vertical' as const }}
+                  <textarea value={msDesc} onChange={(e) => setMsDesc(e.target.value)}
+                    rows={2} placeholder="What did you accomplish?" style={{ ...inputStyle, resize: 'vertical' as const }}
                     onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                    onBlur={(e) => (e.target.style.outline = 'none')}
-                  />
+                    onBlur={(e) => (e.target.style.outline = 'none')} />
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={addMilestone} style={saveBtnStyle(false)}>Add</button>
+                  <button onClick={addMilestone} style={saveBtnStyle}>Add</button>
                   <button onClick={() => setAddingMilestone(false)} style={cancelBtnStyle}>Cancel</button>
                 </div>
               </div>
             ) : (
-              <button
-                onClick={() => setAddingMilestone(true)}
-                style={{
-                  background: 'none',
-                  border: '1px dashed #111827',
-                  padding: '8px 16px',
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                  fontFamily: "'Courier New', Courier, monospace",
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.06em',
-                  fontWeight: 600,
-                  color: '#191C1D',
-                }}
-              >
+              <button onClick={() => setAddingMilestone(true)} style={{
+                background: 'none', border: '2px dashed #111827', padding: '9px 18px',
+                fontFamily: "'Courier New', monospace", fontSize: '0.65rem',
+                fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                cursor: 'pointer', color: '#191C1D',
+              }}>
                 + Add milestone
               </button>
             )}
@@ -439,37 +369,28 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
 
           {/* Mark as complete */}
           {selected.stage !== 'Complete' && (
-            <div>
-              {confirmComplete ? (
-                <div style={{ background: '#F3F4F5', padding: '16px', border: '1px solid #E7E8E9' }}>
-                  <p style={{ fontSize: '0.875rem', marginBottom: '12px', fontWeight: 500 }}>
-                    This will move your project to the Celebration Wall. Are you sure?
-                  </p>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={markComplete} style={saveBtnStyle(false)}>Confirm</button>
-                    <button onClick={() => setConfirmComplete(false)} style={cancelBtnStyle}>Cancel</button>
-                  </div>
+            confirmComplete ? (
+              <div style={{ background: '#F3F4F5', padding: '18px', border: '2px solid #111827' }}>
+                <p style={{ fontSize: '0.875rem', marginBottom: '12px', fontWeight: 600, color: '#111827' }}>
+                  This will move your project to the Celebration Wall. Are you sure?
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={markComplete} style={saveBtnStyle}>Confirm</button>
+                  <button onClick={() => setConfirmComplete(false)} style={cancelBtnStyle}>Cancel</button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmComplete(true)}
-                  style={{
-                    padding: '9px 20px',
-                    background: 'transparent',
-                    border: '1px solid #111827',
-                    fontFamily: "'Courier New', Courier, monospace",
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase' as const,
-                    letterSpacing: '0.06em',
-                    cursor: 'pointer',
-                    color: '#191C1D',
-                  }}
-                >
-                  Mark as Complete
-                </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmComplete(true)} style={{
+                padding: '10px 22px',
+                background: 'transparent', border: '2px solid #111827',
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: '0.75rem', fontWeight: 800,
+                textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                cursor: 'pointer', color: '#191C1D',
+              }}>
+                Mark as Complete
+              </button>
+            )
           )}
         </div>
       )}
@@ -480,38 +401,28 @@ export default function MyProjectsView({ projects: initialProjects }: Props) {
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontFamily: "'Courier New', Courier, monospace",
-  fontSize: '0.6875rem',
-  fontWeight: 700,
+  fontSize: '0.65rem', fontWeight: 700,
   textTransform: 'uppercase' as const,
-  letterSpacing: '0.08em',
-  marginBottom: '6px',
-  color: '#191C1D',
+  letterSpacing: '0.1em', marginBottom: '6px',
+  color: '#6b7280',
 }
 
-function saveBtnStyle(_hover: boolean): React.CSSProperties {
-  return {
-    padding: '6px 14px',
-    background: '#22C55E',
-    color: '#fff',
-    border: 'none',
-    fontFamily: "'Courier New', Courier, monospace",
-    fontSize: '0.6875rem',
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.06em',
-    cursor: 'pointer',
-  }
+const saveBtnStyle: React.CSSProperties = {
+  padding: '7px 16px',
+  background: '#22C55E', color: '#fff',
+  border: '2px solid #111827',
+  fontFamily: "'Courier New', monospace",
+  fontSize: '0.65rem', fontWeight: 700,
+  textTransform: 'uppercase' as const, letterSpacing: '0.07em',
+  cursor: 'pointer',
 }
 
 const cancelBtnStyle: React.CSSProperties = {
-  padding: '6px 14px',
-  background: 'transparent',
-  color: '#191C1D',
-  border: '1px solid #111827',
-  fontFamily: "'Courier New', Courier, monospace",
-  fontSize: '0.6875rem',
-  fontWeight: 700,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
+  padding: '7px 16px',
+  background: 'transparent', color: '#191C1D',
+  border: '2px solid #111827',
+  fontFamily: "'Courier New', monospace",
+  fontSize: '0.65rem', fontWeight: 700,
+  textTransform: 'uppercase' as const, letterSpacing: '0.07em',
   cursor: 'pointer',
 }

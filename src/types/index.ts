@@ -24,6 +24,8 @@ export interface Project {
   milestones: Milestone[];
   completedAt?: string;
   createdAt: string;
+  tags?: string[];
+  featured?: boolean;
 }
 
 export interface Comment {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
 const MOCK_PROFILE = {
@@ -8,12 +8,7 @@ const MOCK_PROFILE = {
 }
 
 function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 export default function ProfilePage() {
@@ -24,117 +19,127 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [saveHover, setSaveHover] = useState(false)
-  const [deleteHover, setDeleteHover] = useState(false)
+  const [mouse, setMouse] = useState({ x: -9999, y: -9999 })
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #111827',
-    fontSize: '0.9375rem',
-    outline: 'none',
-    background: '#fff',
-    color: '#191C1D',
-  }
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontFamily: "'Courier New', Courier, monospace",
-    fontSize: '0.6875rem',
-    fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
-    marginBottom: '6px',
-    color: '#191C1D',
-  }
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    setMouse({ x: e.clientX, y: e.clientY })
+  }, [])
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setIsDirty(false)
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '11px 12px',
+    border: '2px solid #111827', fontSize: '0.9375rem',
+    outline: 'none', background: '#fff', color: '#191C1D',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontFamily: "'Courier New', Courier, monospace",
+    fontSize: '0.65rem', fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em', marginBottom: '6px', color: '#6b7280',
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#F3F4F5', padding: '32px 24px' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        {/* Back link */}
-        <Link
-          to="/app"
-          style={{
-            display: 'inline-block',
-            marginBottom: '24px',
-            fontSize: '0.875rem',
-            color: '#191C1D',
-            textDecoration: 'underline',
-          }}
-        >
+    <div
+      onMouseMove={handleMouseMove}
+      style={{ minHeight: '100vh', background: '#F3F4F5', padding: '40px 24px', position: 'relative', overflow: 'hidden' }}
+    >
+      {/* Dot grid */}
+      <div aria-hidden style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+        backgroundImage: 'radial-gradient(circle, #191C1D 1px, transparent 1px)',
+        backgroundSize: '28px 28px', opacity: 0.07,
+      }} />
+      {/* Mouse glow */}
+      <div aria-hidden style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1,
+        background: `radial-gradient(circle 260px at ${mouse.x}px ${mouse.y}px, rgba(34,197,94,0.15) 0%, transparent 70%)`,
+      }} />
+
+      <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+        {/* Back */}
+        <Link to="/app" style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          marginBottom: '32px',
+          fontFamily: "'Courier New', monospace",
+          fontSize: '0.7rem', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: '#191C1D', textDecoration: 'none',
+          borderBottom: '2px solid #111827',
+        }}>
           ← Back to feed
         </Link>
 
-        {/* Avatar + name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              background: '#22C55E',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              flexShrink: 0,
-            }}
-          >
-            {getInitials(displayName || 'AC')}
+        {/* Hero header */}
+        <div style={{ marginBottom: '32px', borderBottom: '4px solid #111827', paddingBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <div style={{ height: '2px', width: '24px', background: '#22C55E' }} />
+            <span style={{
+              fontFamily: "'Courier New', monospace", fontSize: '0.6rem',
+              fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280',
+            }}>
+              // Account
+            </span>
           </div>
-          <div>
-            <h1
-              style={{
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{
+              width: '72px', height: '72px',
+              background: '#22C55E', border: '3px solid #111827',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 900, fontSize: '1.5rem', color: '#fff',
+              flexShrink: 0,
+              boxShadow: '4px 4px 0px 0px #111827',
+            }}>
+              {getInitials(displayName || 'AC')}
+            </div>
+            <div>
+              <h1 style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: '1.375rem',
-                fontWeight: 700,
-              }}
-            >
-              {displayName || 'Your Profile'}
-            </h1>
-            <p style={{ fontSize: '0.875rem', color: '#191C1D' }}>{MOCK_PROFILE.email}</p>
+                fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                fontWeight: 900, letterSpacing: '-0.04em',
+                textTransform: 'uppercase', lineHeight: 0.95, color: '#111827',
+              }}>
+                {displayName || 'Your'}<br />
+                <span style={{ color: '#22C55E' }}>Profile</span>
+              </h1>
+              <p style={{
+                fontFamily: "'Courier New', monospace",
+                fontSize: '0.7rem', color: '#6b7280', marginTop: '6px',
+              }}>
+                {MOCK_PROFILE.email}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Form card */}
-        <div style={{ background: '#fff', border: '1px solid #E7E8E9', padding: '28px' }}>
+        <div style={{ background: '#fff', border: '2px solid #111827', padding: '28px', boxShadow: '6px 6px 0px 0px #111827' }}>
           <form onSubmit={handleSave}>
             {/* Display name */}
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>Display Name</label>
-              <input
-                type="text"
-                value={displayName}
+              <input type="text" value={displayName}
                 onChange={(e) => { setDisplayName(e.target.value); setIsDirty(true) }}
                 style={inputStyle}
                 onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                onBlur={(e) => (e.target.style.outline = 'none')}
-              />
+                onBlur={(e) => (e.target.style.outline = 'none')} />
             </div>
 
             {/* Email */}
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>Email</label>
-              <input
-                type="email"
-                value={MOCK_PROFILE.email}
-                readOnly
-                style={{ ...inputStyle, background: '#F3F4F5', cursor: 'not-allowed' }}
-              />
-              <p
-                style={{
-                  marginTop: '4px',
-                  fontFamily: "'Courier New', Courier, monospace",
-                  fontSize: '0.6875rem',
-                  color: '#191C1D',
-                }}
-              >
+              <input type="email" value={MOCK_PROFILE.email} readOnly
+                style={{ ...inputStyle, background: '#F3F4F5', cursor: 'not-allowed', border: '2px solid #E7E8E9' }} />
+              <p style={{
+                marginTop: '5px', fontFamily: "'Courier New', monospace",
+                fontSize: '0.6rem', letterSpacing: '0.05em', color: '#6b7280',
+              }}>
                 Email cannot be changed
               </p>
             </div>
@@ -142,121 +147,87 @@ export default function ProfilePage() {
             {/* Bio */}
             <div style={{ marginBottom: '24px' }}>
               <label style={labelStyle}>What I'm building</label>
-              <textarea
-                value={bio}
+              <textarea value={bio}
                 onChange={(e) => { setBio(e.target.value); setIsDirty(true) }}
-                rows={3}
-                style={{ ...inputStyle, resize: 'vertical' as const }}
+                rows={3} style={{ ...inputStyle, resize: 'vertical' as const }}
                 onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                onBlur={(e) => (e.target.style.outline = 'none')}
-              />
+                onBlur={(e) => (e.target.style.outline = 'none')} />
             </div>
 
             {/* Change password */}
-            <div style={{ marginBottom: '24px', borderTop: '1px solid #E7E8E9', paddingTop: '20px' }}>
-              <button
-                type="button"
-                onClick={() => setPasswordExpanded(!passwordExpanded)}
+            <div style={{ marginBottom: '24px', borderTop: '2px solid #E7E8E9', paddingTop: '20px' }}>
+              <button type="button" onClick={() => setPasswordExpanded(!passwordExpanded)}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  fontFamily: "'Courier New', Courier, monospace",
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.08em',
-                  cursor: 'pointer',
-                  color: '#191C1D',
-                  textDecoration: 'underline',
-                }}
-              >
+                  background: 'none', border: 'none', padding: 0,
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.7rem', fontWeight: 700,
+                  textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                  cursor: 'pointer', color: '#191C1D',
+                  borderBottom: '2px solid #111827',
+                }}>
                 {passwordExpanded ? '▲ Hide' : '▼ Change password'}
               </button>
 
               {passwordExpanded && (
                 <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div>
-                    <label style={labelStyle}>Current Password</label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                      onBlur={(e) => (e.target.style.outline = 'none')}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>New Password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                      onBlur={(e) => (e.target.style.outline = 'none')}
-                      placeholder="••••••••"
-                    />
-                  </div>
+                  {[
+                    { label: 'Current Password', value: currentPassword, setter: setCurrentPassword },
+                    { label: 'New Password', value: newPassword, setter: setNewPassword },
+                  ].map(({ label, value, setter }) => (
+                    <div key={label}>
+                      <label style={labelStyle}>{label}</label>
+                      <input type="password" value={value}
+                        onChange={(e) => { setter(e.target.value); setIsDirty(true) }}
+                        style={inputStyle} placeholder="••••••••"
+                        onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                        onBlur={(e) => (e.target.style.outline = 'none')} />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Save button */}
+            {/* Save */}
             {isDirty && (
-              <button
-                type="submit"
+              <button type="submit"
                 onMouseEnter={() => setSaveHover(true)}
                 onMouseLeave={() => setSaveHover(false)}
                 style={{
-                  padding: '10px 28px',
-                  background: saveHover ? '#006E2F' : '#22C55E',
+                  padding: '11px 28px',
+                  background: saveHover ? '#111827' : '#22C55E',
                   color: '#fff',
-                  border: 'none',
-                  fontFamily: "'Courier New', Courier, monospace",
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.08em',
-                  cursor: 'pointer',
-                  marginBottom: '8px',
-                }}
-              >
-                Save changes
+                  border: '2px solid #111827',
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: '0.75rem', fontWeight: 800,
+                  textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                  cursor: 'pointer', marginBottom: '8px',
+                  boxShadow: saveHover ? 'none' : '4px 4px 0px 0px #111827',
+                  transform: saveHover ? 'translate(4px,4px)' : 'none',
+                  transition: 'none',
+                }}>
+                Save changes →
               </button>
             )}
           </form>
 
           {/* Danger zone */}
-          <div style={{ borderTop: '1px solid #E7E8E9', paddingTop: '20px', marginTop: '8px' }}>
-            <p
-              style={{
-                fontFamily: "'Courier New', Courier, monospace",
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                textTransform: 'uppercase' as const,
-                letterSpacing: '0.08em',
-                marginBottom: '10px',
-              }}
-            >
+          <div style={{ borderTop: '2px solid #E7E8E9', paddingTop: '20px', marginTop: '8px' }}>
+            <p style={{
+              fontFamily: "'Courier New', monospace",
+              fontSize: '0.6rem', fontWeight: 700,
+              textTransform: 'uppercase' as const, letterSpacing: '0.15em',
+              marginBottom: '10px', color: '#DC2626',
+            }}>
               Danger Zone
             </p>
-            <button
-              type="button"
-              onMouseEnter={() => setDeleteHover(true)}
-              onMouseLeave={() => setDeleteHover(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                fontSize: '0.875rem',
-                color: '#DC2626',
-                cursor: 'pointer',
-                textDecoration: deleteHover ? 'underline' : 'none',
-              }}
-            >
+            <button type="button" style={{
+              background: 'none', border: '2px solid #DC2626',
+              padding: '7px 16px',
+              fontFamily: "'Courier New', monospace",
+              fontSize: '0.65rem', fontWeight: 700,
+              textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+              cursor: 'pointer', color: '#DC2626',
+            }}>
               Delete account
             </button>
           </div>
