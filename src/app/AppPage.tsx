@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FeedItem, Project, User } from '../types'
-import FeedView from '../features/feed/FeedView'
-import MyProjectsView from '../features/projects/MyProjectsView'
 import CelebrationWallView from '../features/celebration/CelebrationWallView'
+import FeedView from '../features/feed/FeedView'
 import NewProjectPanel from '../features/projects/NewProjectPanel'
+import MyProjectsView from '../features/projects/MyProjectsView'
 
-type View = 'feed' | 'myprojects' | 'celebration'
+type View = 'feed' | 'myprojects' | 'celebration' | 'newproject'
 
 const MOCK_USER: User = {
   id: 'u1',
@@ -24,7 +24,7 @@ const MOCK_FEED: FeedItem[] = [
       id: 'p1',
       ownerId: 'u2',
       ownerName: 'Jordan Lee',
-      title: 'DevLog — a developer journal',
+      title: 'DevLog â€” a developer journal',
       description: 'A minimal journaling tool for developers to track progress publicly.',
       stage: 'In Progress',
       supportRequired: 'UI feedback',
@@ -180,15 +180,15 @@ const MOCK_COMPLETED: Project[] = [
   },
 ]
 
-const NAV_ICONS: Record<string, string> = {
-  feed: '◈',
-  myprojects: '◧',
-  celebration: '◉',
+const NAV_ICONS: Record<View, string> = {
+  feed: '*',
+  myprojects: '[]',
+  celebration: 'o',
+  newproject: '+',
 }
 
 export default function AppPage() {
   const [activeView, setActiveView] = useState<View>('feed')
-  const [newProjectOpen, setNewProjectOpen] = useState(false)
   const [signOutHover, setSignOutHover] = useState(false)
   const [newProjectHover, setNewProjectHover] = useState(false)
   const [mouse, setMouse] = useState({ x: -9999, y: -9999 })
@@ -197,18 +197,26 @@ export default function AppPage() {
     setMouse({ x: e.clientX, y: e.clientY })
   }, [])
 
-  const navItems: { id: View; label: string }[] = [
+  const navItems: { id: Exclude<View, 'newproject'>; label: string }[] = [
     { id: 'feed', label: 'Feed' },
     { id: 'myprojects', label: 'My Projects' },
     { id: 'celebration', label: 'Celebration Wall' },
   ]
 
+  const viewTitle =
+    activeView === 'feed'
+      ? 'Feed'
+      : activeView === 'myprojects'
+        ? 'My Projects'
+        : activeView === 'celebration'
+          ? 'Celebration Wall'
+          : 'New Project'
+
   return (
     <div
       onMouseMove={handleMouseMove}
-      style={{ display: 'flex', minHeight: '100vh', background: '#F3F4F5', position: 'relative', overflow: 'hidden' }}
+      style={{ display: 'flex', height: '100vh', background: '#F3F4F5', position: 'relative', overflow: 'hidden' }}
     >
-      {/* ── DOT GRID BACKGROUND ── */}
       <div
         aria-hidden
         style={{
@@ -221,7 +229,6 @@ export default function AppPage() {
           opacity: 0.07,
         }}
       />
-      {/* ── MOUSE GLOW OVERLAY ── */}
       <div
         aria-hidden
         style={{
@@ -229,11 +236,10 @@ export default function AppPage() {
           inset: 0,
           zIndex: 1,
           pointerEvents: 'none',
-          background: `radial-gradient(circle 280px at ${mouse.x}px ${mouse.y}px, rgba(34,197,94,0.18) 0%, transparent 70%)`,
+          background: `radial-gradient(circle 100px at ${mouse.x}px ${mouse.y}px, rgba(34,197,94,0.18) 0%, transparent 0%)`,
         }}
       />
 
-      {/* ── SIDEBAR ── */}
       <aside
         style={{
           width: '260px',
@@ -245,199 +251,249 @@ export default function AppPage() {
           position: 'sticky',
           top: 0,
           height: '100vh',
+          overflow: 'hidden',
           zIndex: 10,
         }}
       >
-        {newProjectOpen ? (
-          <NewProjectPanel onSuccess={() => { setNewProjectOpen(false); setActiveView('feed') }} />
-        ) : (
-          <>
-            {/* Brand */}
-            <div style={{ padding: '20px 20px 16px', borderBottom: '2px solid #111827' }}>
-              <div style={{
+        <div style={{ padding: '20px 20px 16px', borderBottom: '2px solid #111827' }}>
+          <div
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 900,
+              fontSize: '1.1rem',
+              letterSpacing: '-0.03em',
+              color: '#111827',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span style={{ color: '#22C55E' }}>M</span>ZANSI
+            <span style={{ color: '#22C55E' }}>B</span>UILDS
+          </div>
+        </div>
+
+        <div style={{ padding: '16px 20px', borderBottom: '0px solid #111827' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                background: '#22C55E',
+                border: '2px solid #111827',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 900,
-                fontSize: '1.1rem',
-                letterSpacing: '-0.03em',
-                color: '#111827',
-                textTransform: 'uppercase',
-              }}>
-                <span style={{ color: '#22C55E' }}>M</span>ZANSI
-                <span style={{ color: '#22C55E' }}>B</span>UILDS
-              </div>
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                flexShrink: 0,
+              }}
+            >
+              {MOCK_USER.avatarInitials}
             </div>
-
-            {/* User */}
-            <div style={{ padding: '16px 20px', borderBottom: '2px solid #111827' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '38px', height: '38px',
-                  background: '#22C55E',
-                  border: '2px solid #111827',
-                  color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 700, fontSize: '0.8rem',
-                  flexShrink: 0,
-                }}>
-                  {MOCK_USER.avatarInitials}
-                </div>
-                <div>
-                  <div style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontWeight: 700, fontSize: '0.8rem',
-                    textTransform: 'uppercase', letterSpacing: '0.05em',
-                  }}>
-                    {MOCK_USER.displayName}
-                  </div>
-                  <Link to="/profile" style={{
-                    fontFamily: "'Courier New', monospace",
-                    fontSize: '0.65rem', color: '#191C1D',
-                    textDecoration: 'none', letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    borderBottom: '1px solid #191C1D',
-                  }}>
-                    View profile
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Nav */}
-            <nav style={{ flex: 1, padding: '8px 0' }}>
-              {navItems.map((item) => {
-                const isActive = activeView === item.id && !newProjectOpen
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => { setActiveView(item.id); setNewProjectOpen(false) }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '11px 20px',
-                      background: isActive ? '#22C55E' : 'none',
-                      border: 'none',
-                      borderLeft: isActive ? '0px' : '3px solid transparent',
-                      fontFamily: "'Space Grotesk', sans-serif",
-                      fontWeight: isActive ? 700 : 500,
-                      fontSize: '0.8125rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      cursor: 'pointer',
-                      color: isActive ? '#fff' : '#191C1D',
-                      boxShadow: isActive ? '4px 4px 0px 0px #111827' : 'none',
-                      transform: isActive ? 'translate(-2px, -2px)' : 'none',
-                      marginBottom: isActive ? '4px' : '0',
-                      transition: 'none',
-                    }}
-                  >
-                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>{NAV_ICONS[item.id]}</span>
-                    {item.label}
-                  </button>
-                )
-              })}
-            </nav>
-
-            {/* Bottom */}
-            <div style={{ padding: '16px 20px', borderTop: '2px solid #111827' }}>
-              <button
-                onClick={() => setNewProjectOpen(true)}
-                onMouseEnter={() => setNewProjectHover(true)}
-                onMouseLeave={() => setNewProjectHover(false)}
+            <div>
+              <div
                 style={{
-                  display: 'block', width: '100%',
-                  padding: '11px 0',
-                  background: newProjectHover ? '#111827' : '#22C55E',
-                  color: '#fff',
-                  border: '2px solid #111827',
                   fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '0.75rem', fontWeight: 800,
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
-                  cursor: 'pointer', marginBottom: '12px',
-                  boxShadow: newProjectHover ? 'none' : '4px 4px 0px 0px #111827',
-                  transform: newProjectHover ? 'translate(4px, 4px)' : 'none',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {MOCK_USER.displayName}
+              </div>
+              <Link
+                to="/profile"
+                style={{
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.65rem',
+                  color: '#191C1D',
+                  textDecoration: 'none',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  borderBottom: '1px solid #191C1D',
+                }}
+              >
+                View profile
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <nav style={{ flex: 1, padding: '8px 0' }}>
+          {navItems.map((item) => {
+            const isActive = activeView === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '11px 20px',
+                  background: isActive ? '#22C55E' : 'none',
+                  border: 'none',
+                  borderLeft: isActive ? '0px' : '3px solid transparent',
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '0.8125rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  color: isActive ? '#fff' : '#191C1D',
+                  boxShadow: isActive ? '4px 4px 0px 0px #111827' : 'none',
+                  transform: isActive ? 'translate(-2px, -2px)' : 'none',
+                  marginBottom: isActive ? '4px' : '0',
                   transition: 'none',
                 }}
               >
-                + New Project
+                <span style={{ fontSize: '1rem', lineHeight: 1 }}>{NAV_ICONS[item.id]}</span>
+                {item.label}
               </button>
-              <button
-                onMouseEnter={() => setSignOutHover(true)}
-                onMouseLeave={() => setSignOutHover(false)}
-                style={{
-                  background: 'none', border: 'none', padding: 0,
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: '0.7rem', letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  textDecoration: signOutHover ? 'underline' : 'none',
-                  cursor: 'pointer', color: '#191C1D',
-                }}
-              >
-                Sign out
-              </button>
-            </div>
-          </>
-        )}
+            )
+          })}
+        </nav>
+
+        <div style={{ padding: '16px 20px', borderTop: '2px solid #111827' }}>
+          <button
+            onClick={() => setActiveView('newproject')}
+            onMouseEnter={() => setNewProjectHover(true)}
+            onMouseLeave={() => setNewProjectHover(false)}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '11px 0',
+              background: activeView === 'newproject' || newProjectHover ? '#111827' : '#22C55E',
+              color: '#fff',
+              border: '2px solid #111827',
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+              marginBottom: '12px',
+              boxShadow: activeView === 'newproject' || newProjectHover ? 'none' : '4px 4px 0px 0px #111827',
+              transform: activeView === 'newproject' || newProjectHover ? 'translate(4px, 4px)' : 'none',
+              transition: 'none',
+            }}
+          >
+            + New Project
+          </button>
+          <button
+            onMouseEnter={() => setSignOutHover(true)}
+            onMouseLeave={() => setSignOutHover(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              fontFamily: "'Courier New', monospace",
+              fontSize: '0.7rem',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              textDecoration: signOutHover ? 'underline' : 'none',
+              cursor: 'pointer',
+              color: '#191C1D',
+            }}
+          >
+            Sign out
+          </button>
+        </div>
       </aside>
 
-      {/* ── MAIN PANEL ── */}
-      <main style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column' }}>
-        {/* Top bar */}
-        {!newProjectOpen && (
-          <header style={{
-            position: 'sticky', top: 0, zIndex: 20,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      <main
+        style={{
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          height: '100vh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          position: 'relative',
+          zIndex: 5,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <header
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             padding: '0 32px',
-            height: '56px',
+            height: '60px',
             background: 'rgba(248,249,250,0.85)',
             backdropFilter: 'blur(12px)',
             borderBottom: '2px solid #111827',
-          }}>
-            <div style={{ display: 'flex', gap: '24px' }}>
-              {(['Docs', 'Community'] as const).map(label => (
-                <a key={label} href="#" style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '0.7rem', fontWeight: 600,
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
-                  color: '#191C1D', textDecoration: 'none',
-                }}>
-                  {label}
-                </a>
-              ))}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ position: 'relative' }}>
-                <input
-                  placeholder="SEARCH_BUILDERS"
-                  style={{
-                    border: '2px solid #111827', background: '#fff',
-                    padding: '6px 12px 6px 28px',
-                    fontFamily: "'Courier New', monospace",
-                    fontSize: '0.7rem', letterSpacing: '0.05em',
-                    width: '200px', outline: 'none',
-                  }}
-                />
-                <span style={{
-                  position: 'absolute', left: '8px', top: '50%',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: '#191C1D',
+            }}
+          >
+            {viewTitle}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ position: 'relative' }}>
+              <input
+                placeholder="SEARCH_BUILDERS"
+                style={{
+                  border: '2px solid #111827',
+                  background: '#fff',
+                  padding: '6px 12px 6px 28px',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.05em',
+                  width: '200px',
+                  outline: 'none',
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '8px',
+                  top: '50%',
                   transform: 'translateY(-50%)',
-                  fontSize: '0.75rem', color: '#6b7280',
-                }}>⌕</span>
-              </div>
+                  fontSize: '0.75rem',
+                  color: '#6b7280',
+                }}
+              >
+                ?
+              </span>
             </div>
-          </header>
-        )}
+          </div>
+        </header>
 
-        {/* Content */}
-        <div style={{ flex: 1, padding: newProjectOpen ? '0' : '40px 48px', maxWidth: '1400px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-          {newProjectOpen ? (
-            <NewProjectPanel onSuccess={() => { setNewProjectOpen(false); setActiveView('feed') }} />
-          ) : activeView === 'feed' ? (
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            padding: activeView === 'newproject' ? '32px 48px 40px' : '40px 48px',
+            maxWidth: '1400px',
+            width: '100%',
+            margin: '0 auto',
+            boxSizing: 'border-box',
+          }}
+        >
+          {activeView === 'feed' ? (
             <FeedView feedItems={MOCK_FEED} currentUserId={MOCK_USER.id} />
           ) : activeView === 'myprojects' ? (
             <MyProjectsView projects={MOCK_MY_PROJECTS} />
+          ) : activeView === 'newproject' ? (
+            <NewProjectPanel onSuccess={() => setActiveView('feed')} />
           ) : (
             <CelebrationWallView projects={MOCK_COMPLETED} />
           )}
