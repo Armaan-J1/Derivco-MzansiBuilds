@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import DotGrid from '../component/DotGrid'
 import { FeedItem, Project, User } from '../types'
 import CelebrationWallView from '../features/celebration/CelebrationWallView'
 import FeedView from '../features/feed/FeedView'
@@ -212,14 +213,9 @@ export default function AppPage() {
   const [activeView, setActiveView] = useState<View>('feed')
   const [signOutHover, setSignOutHover] = useState(false)
   const [newProjectHover, setNewProjectHover] = useState(false)
-  const [mouse, setMouse] = useState({ x: -9999, y: -9999 })
   const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED)
   const [myProjects, setMyProjects] = useState<Project[]>(INITIAL_MY_PROJECTS)
   const [completedProjects, setCompletedProjects] = useState<Project[]>(INITIAL_COMPLETED)
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    setMouse({ x: e.clientX, y: e.clientY })
-  }, [])
 
   function syncProjectAcrossViews(project: Project) {
     setFeedItems((prev) => prev.map((item) => (
@@ -294,31 +290,24 @@ export default function AppPage() {
 
   return (
     <div
-      onMouseMove={handleMouseMove}
       style={{ display: 'flex', height: '100vh', background: '#F3F4F5', position: 'relative', overflow: 'hidden' }}
     >
-      <div
-        aria-hidden
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(circle, #191C1D 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          opacity: 0.07,
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1,
-          pointerEvents: 'none',
-          background: `radial-gradient(circle 100px at ${mouse.x}px ${mouse.y}px, rgba(34,197,94,0.18) 0%, transparent 0%)`,
-        }}
-      />
+      {/* DotGrid background */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <DotGrid
+          dotSize={4}
+          gap={26}
+          baseColor="#ededed"
+          activeColor="#2bff00"
+          proximity={100}
+          speedTrigger={100}
+          shockRadius={250}
+          shockStrength={6}
+          maxSpeed={5000}
+          resistance={750}
+          returnDuration={1.5}
+        />
+      </div>
 
       <aside
         style={{

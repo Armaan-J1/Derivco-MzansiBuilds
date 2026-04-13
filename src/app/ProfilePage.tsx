@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import DotGrid from '../component/DotGrid'
 
 const MOCK_PROFILE = {
   displayName: 'Alex Chen',
@@ -20,11 +21,6 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [saveHover, setSaveHover] = useState(false)
-  const [mouse, setMouse] = useState({ x: -9999, y: -9999 })
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    setMouse({ x: e.clientX, y: e.clientY })
-  }, [])
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -51,20 +47,24 @@ export default function ProfilePage() {
 
   return (
     <div
-      onMouseMove={handleMouseMove}
       style={{ minHeight: '100vh', background: '#F3F4F5', padding: '40px 24px', position: 'relative', overflow: 'hidden' }}
     >
-      {/* Dot grid */}
-      <div aria-hidden style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        backgroundImage: 'radial-gradient(circle, #191C1D 1px, transparent 1px)',
-        backgroundSize: '28px 28px', opacity: 0.07,
-      }} />
-      {/* Mouse glow */}
-      <div aria-hidden style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1,
-        background: `radial-gradient(circle 260px at ${mouse.x}px ${mouse.y}px, rgba(34,197,94,0.15) 0%, transparent 70%)`,
-      }} />
+      {/* DotGrid background */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <DotGrid
+          dotSize={4}
+          gap={26}
+          baseColor="#ededed"
+          activeColor="#2bff00"
+          proximity={100}
+          speedTrigger={100}
+          shockRadius={250}
+          shockStrength={6}
+          maxSpeed={5000}
+          resistance={750}
+          returnDuration={1.5}
+        />
+      </div>
 
       <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
         {/* Back */}
