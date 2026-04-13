@@ -7,7 +7,6 @@ import {
   updateDoc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
@@ -58,7 +57,7 @@ export async function createProject(
 }
 
 export async function getMyProjects(ownerId: string): Promise<Project[]> {
-  const q = query(collection(db, 'projects'), where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'))
+  const q = query(collection(db, 'projects'), where('ownerId', '==', ownerId))
   const snap = await getDocs(q)
   const projects: Project[] = []
   for (const docSnap of snap.docs) {
@@ -76,13 +75,15 @@ export async function getMyProjects(ownerId: string): Promise<Project[]> {
     }).sort((a, b) => a.date.localeCompare(b.date))
     projects.push(project)
   }
-  return projects
+  return projects.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
 export async function getCompletedProjects(): Promise<Project[]> {
-  const q = query(collection(db, 'projects'), where('stage', '==', 'Complete'), orderBy('completedAt', 'desc'))
+  const q = query(collection(db, 'projects'), where('stage', '==', 'Complete'))
   const snap = await getDocs(q)
-  return snap.docs.map((d) => docToProject(d.id, d.data() as Record<string, unknown>))
+  return snap.docs
+    .map((d) => docToProject(d.id, d.data() as Record<string, unknown>))
+    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
 }
 
 export async function updateProject(projectId: string, fields: Partial<Omit<Project, 'id' | 'milestones'>>) {

@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DotGrid from '../component/DotGrid'
 import { login, register, resetPassword } from '../services/authService'
+import { useAuthStore } from '../features/auth/useAuthStore'
 
 type Tab = 'login' | 'register'
 
 export default function AuthPage() {
   const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuthStore()
   const [tab, setTab] = useState<Tab>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -20,6 +22,11 @@ export default function AuthPage() {
   const [authSuccess, setAuthSuccess] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Navigate once Firebase confirms the user is authenticated
+  useEffect(() => {
+    if (!authLoading && user) navigate('/app')
+  }, [user, authLoading, navigate])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setAuthError('')
@@ -32,7 +39,7 @@ export default function AuthPage() {
         if (regPassword !== regConfirm) throw new Error('Passwords do not match')
         await register(regName, regEmail, regPassword, regBuilding)
       }
-      navigate('/app')
+      // navigation is handled by the useEffect above once onAuthStateChanged fires
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
       setAuthError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim())

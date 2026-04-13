@@ -11,7 +11,7 @@ interface DraftProject {
 }
 
 interface Props {
-  onCreate: (project: DraftProject) => void
+  onCreate: (project: DraftProject) => Promise<void>
 }
 
 export default function NewProjectPanel({ onCreate }: Props) {
@@ -22,28 +22,36 @@ export default function NewProjectPanel({ onCreate }: Props) {
   const [githubUrl, setGithubUrl] = useState('')
   const [githubVisible, setGithubVisible] = useState(true)
   const [submitHover, setSubmitHover] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   const stages: Project['stage'][] = ['Planning', 'In Progress', 'Blocked', 'Wrapping Up', 'Complete']
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-
-    onCreate({
-      title: title.trim(),
-      description: description.trim(),
-      stage,
-      supportRequired: support.trim(),
-      githubUrl: githubUrl.trim(),
-      githubVisible,
-    })
-
-    setTitle('')
-    setDescription('')
-    setStage('Planning')
-    setSupport('')
-    setGithubUrl('')
-    setGithubVisible(true)
+    setError('')
+    setSubmitting(true)
+    try {
+      await onCreate({
+        title: title.trim(),
+        description: description.trim(),
+        stage,
+        supportRequired: support.trim(),
+        githubUrl: githubUrl.trim(),
+        githubVisible,
+      })
+      setTitle('')
+      setDescription('')
+      setStage('Planning')
+      setSupport('')
+      setGithubUrl('')
+      setGithubVisible(true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save project. Try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -203,13 +211,19 @@ export default function NewProjectPanel({ onCreate }: Props) {
             </span>
           </label>
 
+          {error && (
+            <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.7rem', color: '#DC2626', letterSpacing: '0.03em' }}>
+              {error}
+            </p>
+          )}
           <button
             type="submit"
+            disabled={submitting}
             onMouseEnter={() => setSubmitHover(true)}
             onMouseLeave={() => setSubmitHover(false)}
             style={{
               padding: '12px 0',
-              background: submitHover ? '#111827' : '#22C55E',
+              background: submitting ? '#9CA3AF' : submitHover ? '#111827' : '#22C55E',
               color: '#fff',
               border: '2px solid #111827',
               fontFamily: "'Space Grotesk', sans-serif",
@@ -217,13 +231,13 @@ export default function NewProjectPanel({ onCreate }: Props) {
               fontWeight: 800,
               textTransform: 'uppercase' as const,
               letterSpacing: '0.1em',
-              cursor: 'pointer',
-              boxShadow: submitHover ? 'none' : '4px 4px 0px 0px #111827',
-              transform: submitHover ? 'translate(4px,4px)' : 'none',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              boxShadow: submitHover && !submitting ? 'none' : '4px 4px 0px 0px #111827',
+              transform: submitHover && !submitting ? 'translate(4px,4px)' : 'none',
               transition: 'none',
             }}
           >
-            Post Project {'->'}
+            {submitting ? 'Saving...' : 'Post Project ->'}
           </button>
         </form>
       </div>

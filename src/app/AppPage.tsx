@@ -75,12 +75,38 @@ export default function AppPage() {
     setFeedItems((prev) => prev.map((item) => (
       item.project.id === project.id ? { ...item, project: { ...item.project, ...project } } : item
     )))
-    setCompletedProjects((prev) => prev.map((item) => (
-      item.id === project.id ? { ...item, ...project } : item
-    )))
+    setCompletedProjects((prev) => {
+      const exists = prev.some((item) => item.id === project.id)
+      if (project.stage === 'Complete' && !exists) return [project, ...prev]
+      return prev.map((item) => item.id === project.id ? { ...item, ...project } : item)
+    })
   }
 
   function handleProjectsChange(nextProjects: Project[]) {
+    // Sync feed item snapshots for any projects that changed
+    nextProjects.forEach((project) => {
+      const prev = myProjects.find((p) => p.id === project.id)
+      if (prev && (
+        prev.stage !== project.stage ||
+        prev.title !== project.title ||
+        prev.description !== project.description ||
+        prev.supportRequired !== project.supportRequired ||
+        prev.githubUrl !== project.githubUrl ||
+        prev.githubVisible !== project.githubVisible
+      )) {
+        const feedItem = feedItems.find((item) => item.project.id === project.id)
+        if (feedItem) {
+          updateFeedItemSnapshot(feedItem.id, {
+            stage: project.stage,
+            title: project.title,
+            description: project.description,
+            supportRequired: project.supportRequired,
+            githubUrl: project.githubUrl,
+            githubVisible: project.githubVisible,
+          }).catch(console.error)
+        }
+      }
+    })
     setMyProjects(nextProjects)
     nextProjects.forEach(syncProjectAcrossViews)
   }
@@ -93,7 +119,7 @@ export default function AppPage() {
     githubUrl: string
     githubVisible: boolean
   }) {
-    if (!user) return
+    if (!user) throw new Error('Not authenticated')
     const createdAt = new Date().toISOString().slice(0, 10)
     const projectId = await createProject(user.uid, displayName, project)
     const feedItemId = await createFeedItem(
