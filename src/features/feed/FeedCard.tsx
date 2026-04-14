@@ -40,7 +40,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
   const { user } = useAuthStore()
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [requestsOpen, setRequestsOpen] = useState(false)
-  const [commentCount, setCommentCount] = useState(item.commentCount ?? 0)
+
   const [raisedByMe, setRaisedByMe] = useState(item.raisedByMe)
   const [raiseCount, setRaiseCount] = useState(item.raiseHandCount)
   const [hovered, setHovered] = useState(false)
@@ -272,7 +272,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
 
       {commentsOpen && (
         <div style={{ borderTop: '2px solid #111827' }}>
-          <CommentThread feedItemId={item.id} initialComments={item.comments} currentUserId={currentUserId} onCountChange={setCommentCount} />
+          <CommentThread feedItemId={item.id} initialComments={item.comments} currentUserId={currentUserId} />
         </div>
       )}
 
