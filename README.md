@@ -6,6 +6,14 @@ MzansiBuilds is a "build in public" platform designed for South African develope
 
 ---
 
+## Live Demo
+
+[https://derivco-mzansi-builds.vercel.app](https://derivco-mzansi-builds.vercel.app)
+
+---
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -113,22 +121,16 @@ npm run dev
 ## Environment Variables
 
 ```
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_API_KEY= Contact for keys
+VITE_FIREBASE_AUTH_DOMAIN= Contact for keys
+VITE_FIREBASE_PROJECT_ID= Contact for keys
+VITE_FIREBASE_STORAGE_BUCKET= Contact for keys
+VITE_FIREBASE_MESSAGING_SENDER_ID= Contact for keys
+VITE_FIREBASE_APP_ID= Contact for keys
 ```
 
----
 
-## Live Demo
-
-[https://derivco-mzansi-builds.vercel.app](https://derivco-mzansi-builds.vercel.app)
-
----
 
 ## Author
 
-**Armaan Joosub** — Derivco Graduate Programme 2025
+**Armaan Jaganath** — Derivco Graduate Programme 2025
