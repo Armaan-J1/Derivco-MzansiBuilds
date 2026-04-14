@@ -264,7 +264,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
                 boxShadow: raisedByMe ? '3px 3px 0px 0px #006E2F' : 'none',
               }}
             >
-              ✋ Raise Hand ({raiseCount})
+              Raise Hand ({raiseCount}) 
             </button>
           )}
         </div>
