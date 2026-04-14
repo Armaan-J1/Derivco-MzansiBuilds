@@ -32,6 +32,7 @@ export default function AppPage() {
   const [completedProjects, setCompletedProjects] = useState<Project[]>([])
   const [feedLastDoc, setFeedLastDoc] = useState<DocumentSnapshot | null>(null)
   const [feedLoading, setFeedLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Compute avatar initials from auth user
   const displayName = user?.displayName ?? ''
@@ -151,6 +152,7 @@ export default function AppPage() {
       type: 'new_project',
       project: newProject,
       comments: [],
+      commentCount: 0,
       raiseHandCount: 0,
       raisedByMe: false,
       raiseHandRequests: [],
@@ -168,6 +170,11 @@ export default function AppPage() {
   async function handleSignOut() {
     await logout()
     navigate('/')
+  }
+
+  function switchView(view: View) {
+    setActiveView(view)
+    setSearchQuery('')
   }
 
   const navItems: { id: Exclude<View, 'newproject'>; label: string }[] = [
@@ -194,7 +201,7 @@ export default function AppPage() {
         <DotGrid
           dotSize={4}
           gap={26}
-          baseColor="#ededed"
+          baseColor="#e5e5e5"
           activeColor="#2bff00"
           proximity={100}
           speedTrigger={100}
@@ -293,12 +300,13 @@ export default function AppPage() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveView(item.id)}
+                onClick={() => switchView(item.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
-                  width: '100%',
+                  width: '90%',
+                  marginLeft: '16px',
                   textAlign: 'left',
                   padding: '11px 20px',
                   background: isActive ? '#22C55E' : 'none',
@@ -326,7 +334,7 @@ export default function AppPage() {
 
         <div style={{ padding: '16px 20px', borderTop: '2px solid #111827' }}>
           <button
-            onClick={() => setActiveView('newproject')}
+            onClick={() => switchView('newproject')}
             onMouseEnter={() => setNewProjectHover(true)}
             onMouseLeave={() => setNewProjectHover(false)}
             style={{
@@ -413,35 +421,42 @@ export default function AppPage() {
           >
             {viewTitle}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ position: 'relative' }}>
-              <input
-                placeholder="SEARCH_BUILDERS"
-                style={{
-                  border: '2px solid #111827',
-                  background: '#fff',
-                  padding: '6px 12px 6px 28px',
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: '0.7rem',
-                  letterSpacing: '0.05em',
-                  width: '200px',
-                  outline: 'none',
-                }}
-              />
-              <span
-                style={{
-                  position: 'absolute',
-                  left: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '0.75rem',
-                  color: '#6b7280',
-                }}
-              >
-                ?
-              </span>
+          {(activeView === 'feed' || activeView === 'celebration') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ position: 'relative' }}>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={activeView === 'celebration' ? 'SEARCH_BUILDERS' : 'SEARCH_PROJECTS'}
+                  style={{
+                    border: '2px solid #111827',
+                    background: '#fff',
+                    padding: '6px 12px 6px 28px',
+                    fontFamily: "'Courier New', monospace",
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.05em',
+                    width: '220px',
+                    outline: 'none',
+                  }}
+                  onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                  onBlur={(e) => (e.target.style.outline = 'none')}
+                />
+                <span style={{
+                  position: 'absolute', left: '8px', top: '50%',
+                  transform: 'translateY(-50%)', fontSize: '0.75rem', color: '#6b7280',
+                }}>
+                  /
+                </span>
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} style={{
+                    position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
+                    fontSize: '0.7rem', color: '#6b7280', lineHeight: 1,
+                  }}>✕</button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </header>
 
         <div
@@ -456,27 +471,14 @@ export default function AppPage() {
           }}
         >
           {activeView === 'feed' ? (
-            <>
-              <FeedView feedItems={feedItems} currentUserId={user?.uid ?? ''} />
-              {feedLastDoc && (
-                <button
-                  onClick={loadMore}
-                  disabled={feedLoading}
-                  style={{
-                    display: 'block', margin: '24px auto 0',
-                    padding: '10px 24px',
-                    background: 'transparent', color: '#191C1D',
-                    border: '2px solid #111827',
-                    fontFamily: "'Courier New', monospace",
-                    fontSize: '0.7rem', fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: '0.08em',
-                    cursor: feedLoading ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {feedLoading ? 'Loading...' : 'Load more'}
-                </button>
-              )}
-            </>
+            <FeedView
+              feedItems={feedItems.filter((item) => item.project.stage !== 'Blocked')}
+              currentUserId={user?.uid ?? ''}
+              searchQuery={searchQuery}
+              hasMoreFromServer={!!feedLastDoc}
+              feedLoading={feedLoading}
+              onLoadMoreFromServer={loadMore}
+            />
           ) : activeView === 'myprojects' ? (
             <MyProjectsView
               projects={myProjects}
@@ -487,7 +489,7 @@ export default function AppPage() {
           ) : activeView === 'newproject' ? (
             <NewProjectPanel onCreate={handleCreateProject} />
           ) : (
-            <CelebrationWallView projects={completedProjects} />
+            <CelebrationWallView projects={completedProjects} searchQuery={searchQuery} />
           )}
         </div>
       </main>

@@ -29,7 +29,8 @@ export async function addComment(
     text,
     createdAt: serverTimestamp(),
   })
-  await updateDoc(doc(db, 'feedItems', feedItemId), { commentCount: increment(1) })
+  // Fire and forget — don't let a count update failure block the comment appearing
+  updateDoc(doc(db, 'feedItems', feedItemId), { commentCount: increment(1) }).catch(() => {})
   return {
     id: ref.id,
     authorId,

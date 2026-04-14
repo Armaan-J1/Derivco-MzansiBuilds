@@ -21,6 +21,9 @@ export default function AuthPage() {
   const [authError, setAuthError] = useState('')
   const [authSuccess, setAuthSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [showRegPassword, setShowRegPassword] = useState(false)
+  const [showRegConfirm, setShowRegConfirm] = useState(false)
 
   // Navigate once Firebase confirms the user is authenticated
   useEffect(() => {
@@ -107,7 +110,7 @@ export default function AuthPage() {
         <DotGrid
           dotSize={4}
           gap={26}
-          baseColor="#ededed"
+          baseColor="#e5e5e5"
           activeColor="#2bff00"
           proximity={100}
           speedTrigger={100}
@@ -218,10 +221,20 @@ export default function AuthPage() {
                 </div>
                 <div style={fieldStyle}>
                   <label style={labelStyle}>Password</label>
-                  <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
-                    style={inputStyle} placeholder="••••••••"
-                    onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
-                    onBlur={(e) => (e.target.style.outline = 'none')} />
+                  <div style={{ position: 'relative' }}>
+                    <input type={showLoginPassword ? 'text' : 'password'} value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
+                      style={{ ...inputStyle, paddingRight: '48px' }} placeholder="••••••••"
+                      onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                      onBlur={(e) => (e.target.style.outline = 'none')} />
+                    <button type="button" onClick={() => setShowLoginPassword((v) => !v)} style={{
+                      position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                      fontFamily: "'Courier New', monospace", fontSize: '0.6rem', fontWeight: 700,
+                      color: '#6b7280', letterSpacing: '0.05em', textTransform: 'uppercase',
+                    }}>
+                      {showLoginPassword ? 'HIDE' : 'SHOW'}
+                    </button>
+                  </div>
                   <button type="button" onClick={handleForgotPassword} style={{
                     alignSelf: 'flex-start', marginTop: '6px',
                     background: 'none', border: 'none',
@@ -236,20 +249,54 @@ export default function AuthPage() {
               </>
             ) : (
               <>
-                {[
-                  { label: 'Display Name', type: 'text', value: regName, setter: setRegName, placeholder: 'Your name' },
-                  { label: 'Email', type: 'email', value: regEmail, setter: setRegEmail, placeholder: 'you@example.com' },
-                  { label: 'Password', type: 'password', value: regPassword, setter: setRegPassword, placeholder: '••••••••' },
-                  { label: 'Confirm Password', type: 'password', value: regConfirm, setter: setRegConfirm, placeholder: '••••••••' },
-                ].map(({ label, type, value, setter, placeholder }) => (
-                  <div key={label} style={fieldStyle}>
-                    <label style={labelStyle}>{label}</label>
-                    <input type={type} value={value} onChange={(e) => setter(e.target.value)}
-                      style={inputStyle} placeholder={placeholder}
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Display Name</label>
+                  <input type="text" value={regName} onChange={(e) => setRegName(e.target.value)}
+                    style={inputStyle} placeholder="Your name"
+                    onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                    onBlur={(e) => (e.target.style.outline = 'none')} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Email</label>
+                  <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)}
+                    style={inputStyle} placeholder="you@example.com"
+                    onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                    onBlur={(e) => (e.target.style.outline = 'none')} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type={showRegPassword ? 'text' : 'password'} value={regPassword} onChange={(e) => setRegPassword(e.target.value)}
+                      style={{ ...inputStyle, paddingRight: '48px' }} placeholder="••••••••"
                       onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
                       onBlur={(e) => (e.target.style.outline = 'none')} />
+                    <button type="button" onClick={() => setShowRegPassword((v) => !v)} style={{
+                      position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                      fontFamily: "'Courier New', monospace", fontSize: '0.6rem', fontWeight: 700,
+                      color: '#6b7280', letterSpacing: '0.05em', textTransform: 'uppercase',
+                    }}>
+                      {showRegPassword ? 'HIDE' : 'SHOW'}
+                    </button>
                   </div>
-                ))}
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Confirm Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type={showRegConfirm ? 'text' : 'password'} value={regConfirm} onChange={(e) => setRegConfirm(e.target.value)}
+                      style={{ ...inputStyle, paddingRight: '48px' }} placeholder="••••••••"
+                      onFocus={(e) => (e.target.style.outline = '2px solid #22C55E')}
+                      onBlur={(e) => (e.target.style.outline = 'none')} />
+                    <button type="button" onClick={() => setShowRegConfirm((v) => !v)} style={{
+                      position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                      fontFamily: "'Courier New', monospace", fontSize: '0.6rem', fontWeight: 700,
+                      color: '#6b7280', letterSpacing: '0.05em', textTransform: 'uppercase',
+                    }}>
+                      {showRegConfirm ? 'HIDE' : 'SHOW'}
+                    </button>
+                  </div>
+                </div>
                 <div style={fieldStyle}>
                   <label style={labelStyle}>
                     What are you building?{' '}

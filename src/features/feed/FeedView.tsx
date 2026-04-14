@@ -5,14 +5,37 @@ import FeedCard from './FeedCard'
 interface Props {
   feedItems: FeedItem[]
   currentUserId: string
+  searchQuery: string
+  hasMoreFromServer: boolean
+  feedLoading: boolean
+  onLoadMoreFromServer: () => void
 }
 
-export default function FeedView({ feedItems, currentUserId }: Props) {
+export default function FeedView({ feedItems, currentUserId, searchQuery, hasMoreFromServer, feedLoading, onLoadMoreFromServer }: Props) {
   const [visibleCount, setVisibleCount] = useState(10)
   const [loadMoreHover, setLoadMoreHover] = useState(false)
 
-  const visible = feedItems.slice(0, visibleCount)
-  const hasMore = visibleCount < feedItems.length
+  const q = searchQuery.trim().toLowerCase()
+
+  // When searching, show all matching items across everything loaded; otherwise paginate
+  const filtered = q
+    ? feedItems.filter((item) =>
+        item.project.title.toLowerCase().includes(q) ||
+        item.project.description.toLowerCase().includes(q) ||
+        item.project.ownerName.toLowerCase().includes(q)
+      )
+    : feedItems.slice(0, visibleCount)
+
+  const hasMoreLocal = !q && visibleCount < feedItems.length
+  const showLoadMore = !q && (hasMoreLocal || hasMoreFromServer)
+
+  function handleLoadMore() {
+    if (hasMoreLocal) {
+      setVisibleCount((n) => n + 10)
+    } else {
+      onLoadMoreFromServer()
+    }
+  }
 
   return (
     <div style={{ maxWidth: '1100px' }}>
@@ -43,11 +66,20 @@ export default function FeedView({ feedItems, currentUserId }: Props) {
         </h2>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {visible.map((item) => (
-          <FeedCard key={item.id} item={item} currentUserId={currentUserId} />
-        ))}
-      </div>
+      {filtered.length === 0 && q ? (
+        <p style={{
+          fontFamily: "'Courier New', monospace", fontSize: '0.875rem',
+          fontStyle: 'italic', color: '#6b7280', padding: '24px 0',
+        }}>
+          // No results for "{searchQuery}"
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {filtered.map((item) => (
+            <FeedCard key={item.id} item={item} currentUserId={currentUserId} />
+          ))}
+        </div>
+      )}
 
       <footer style={{
         marginTop: '56px',
@@ -68,27 +100,28 @@ export default function FeedView({ feedItems, currentUserId }: Props) {
         }}>
           Feed stream // builders in motion
         </span>
-        {hasMore && (
+        {showLoadMore && (
           <button
-            onClick={() => setVisibleCount((n) => n + 10)}
+            onClick={handleLoadMore}
+            disabled={feedLoading}
             onMouseEnter={() => setLoadMoreHover(true)}
             onMouseLeave={() => setLoadMoreHover(false)}
             style={{
               padding: '8px 24px',
-              background: loadMoreHover ? '#111827' : '#22C55E',
+              background: feedLoading ? '#9ca3af' : loadMoreHover ? '#111827' : '#22C55E',
               color: '#fff',
               border: '2px solid #111827',
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: '0.7rem', fontWeight: 800,
               textTransform: 'uppercase' as const,
               letterSpacing: '0.1em',
-              cursor: 'pointer',
-              boxShadow: loadMoreHover ? 'none' : '4px 4px 0px 0px #111827',
-              transform: loadMoreHover ? 'translate(4px, 4px)' : 'none',
+              cursor: feedLoading ? 'not-allowed' : 'pointer',
+              boxShadow: loadMoreHover && !feedLoading ? 'none' : '4px 4px 0px 0px #111827',
+              transform: loadMoreHover && !feedLoading ? 'translate(4px, 4px)' : 'none',
               transition: 'none',
             }}
           >
-            Load more
+            {feedLoading ? 'Loading...' : 'Load more'}
           </button>
         )}
         <span style={{
@@ -98,7 +131,7 @@ export default function FeedView({ feedItems, currentUserId }: Props) {
           letterSpacing: '0.2em',
           color: '#111827',
         }}>
-          Visible cards: {visible.length}
+          {q ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''}` : `Showing ${filtered.length}`}
         </span>
       </footer>
     </div>

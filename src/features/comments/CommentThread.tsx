@@ -30,20 +30,21 @@ export default function CommentThread({ feedItemId, initialComments, currentUser
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!text.trim()) {
-      setError('Comment cannot be empty.')
-      return
-    }
+    if (!text.trim()) { setError('Comment cannot be empty.'); return }
     if (!user) return
     setError('')
-    const authorName = user.displayName ?? 'Anonymous'
-    const newComment = await addComment(feedItemId, currentUserId, authorName, text.trim())
-    setComments((prev) => {
-      const next = [...prev, newComment]
-      onCountChange?.(next.length)
-      return next
-    })
-    setText('')
+    try {
+      const authorName = user.displayName ?? 'Anonymous'
+      const newComment = await addComment(feedItemId, currentUserId, authorName, text.trim())
+      setComments((prev) => {
+        const next = [...prev, newComment]
+        onCountChange?.(next.length)
+        return next
+      })
+      setText('')
+    } catch {
+      setError('Failed to post comment. Try again.')
+    }
   }
 
   return (

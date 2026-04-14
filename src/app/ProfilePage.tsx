@@ -110,7 +110,7 @@ export default function ProfilePage() {
         <DotGrid
           dotSize={4}
           gap={26}
-          baseColor="#ededed"
+          baseColor="#e5e5e5"
           activeColor="#2bff00"
           proximity={100}
           speedTrigger={100}

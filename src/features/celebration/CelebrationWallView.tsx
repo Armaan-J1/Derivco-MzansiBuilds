@@ -3,6 +3,7 @@ import { Project } from '../../types'
 
 interface Props {
   projects: Project[]
+  searchQuery: string
 }
 
 // Deterministic thumbnail palette per project
@@ -23,9 +24,11 @@ function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function CelebrationWallView({ projects }: Props) {
-  const rest = projects.filter((p) => !p.featured)
-  const total = projects.length
+export default function CelebrationWallView({ projects, searchQuery }: Props) {
+  const q = searchQuery.trim().toLowerCase()
+  const filtered = q ? projects.filter((p) => p.ownerName.toLowerCase().includes(q)) : projects
+  const rest = filtered.filter((p) => !p.featured)
+  const total = filtered.length
 
   return (
     <div>
@@ -115,7 +118,7 @@ export default function CelebrationWallView({ projects }: Props) {
         {rest.map((p) => <NormalCard key={p.id} project={p} />)}
       </div>
 
-      {projects.length === 0 && (
+      {filtered.length === 0 && (
         <p style={{
           fontFamily: "'Courier New', monospace",
           fontSize: '0.875rem',
@@ -123,7 +126,7 @@ export default function CelebrationWallView({ projects }: Props) {
           color: '#191C1D',
           padding: '40px 0',
         }}>
-          // No completed projects yet. Be the first to ship.
+          {q ? `// No builders found for "${searchQuery}"` : '// No completed projects yet. Be the first to ship.'}
         </p>
       )}
 
