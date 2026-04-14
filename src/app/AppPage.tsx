@@ -10,6 +10,7 @@ import { useAuthStore } from '../features/auth/useAuthStore'
 import { logout } from '../services/authService'
 import { getFeed, createFeedItem, updateFeedItemSnapshot } from '../services/feedService'
 import { getMyProjects, createProject, getCompletedProjects } from '../services/projectService'
+import { useIsMobile } from '../hooks/useIsMobile'
 import type { DocumentSnapshot } from 'firebase/firestore'
 
 type View = 'feed' | 'myprojects' | 'celebration' | 'newproject'
@@ -43,10 +44,20 @@ function IconCelebration({ color }: { color: string }) {
   )
 }
 
+function IconProfile({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="5.5" r="3.5" fill={color} />
+      <path d="M2 16c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke={color} strokeWidth="2" strokeLinecap="square" />
+    </svg>
+  )
+}
+
 const NAV_ICON_COMPONENTS: Record<string, (color: string) => JSX.Element> = {
   feed: (c) => <IconFeed color={c} />,
   myprojects: (c) => <IconProjects color={c} />,
   celebration: (c) => <IconCelebration color={c} />,
+  profile: (c) => <IconProfile color={c} />,
 }
 
 export default function AppPage() {
@@ -195,6 +206,8 @@ export default function AppPage() {
     setActiveView('myprojects')
   }
 
+  const isMobile = useIsMobile()
+
   async function handleSignOut() {
     await logout()
     navigate('/')
@@ -243,20 +256,23 @@ export default function AppPage() {
 
       <aside
         style={{
-          width: '260px',
-          minWidth: '260px',
+          width: isMobile ? '100%' : '260px',
+          minWidth: isMobile ? 'unset' : '260px',
           background: '#fff',
-          borderRight: '2px solid #111827',
+          borderRight: isMobile ? 'none' : '2px solid #111827',
+          borderTop: isMobile ? '2px solid #111827' : 'none',
           display: 'flex',
-          flexDirection: 'column',
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
+          flexDirection: isMobile ? 'row' : 'column',
+          position: isMobile ? 'fixed' : 'sticky',
+          bottom: isMobile ? 0 : 'unset',
+          top: isMobile ? 'unset' : 0,
+          left: isMobile ? 0 : 'unset',
+          height: isMobile ? '60px' : '100vh',
           overflow: 'hidden',
-          zIndex: 10,
+          zIndex: 50,
         }}
       >
-        <div style={{ padding: '20px 20px 20px', borderBottom: '2px solid #111827' }}>
+        <div style={{ padding: '20px 20px 20px', borderBottom: '2px solid #111827', display: isMobile ? 'none' : 'block' }}>
           <div
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
@@ -272,7 +288,7 @@ export default function AppPage() {
           </div>
         </div>
 
-        <div style={{ padding: '20px 20px' }}>
+        <div style={{ padding: '20px 20px', display: isMobile ? 'none' : 'block' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -322,39 +338,49 @@ export default function AppPage() {
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '8px 0' }}>
-          {navItems.map((item) => {
+        <nav style={{ flex: 1, padding: isMobile ? '0' : '8px 0', display: 'flex', flexDirection: isMobile ? 'row' : 'column' }}>
+          {[
+            ...navItems,
+            ...(isMobile ? [{ id: 'profile' as const, label: 'Profile' }] : []),
+          ].map((item) => {
             const isActive = activeView === item.id
+            const iconColor = isMobile
+              ? (isActive ? '#22C55E' : '#6b7280')
+              : (isActive ? '#fff' : '#191C1D')
             return (
               <button
                 key={item.id}
-                onClick={() => switchView(item.id)}
+                onClick={() => item.id === 'profile' ? navigate('/profile') : switchView(item.id as View)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
-                  width: '90%',
-                  marginLeft: '16px',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: isMobile ? '3px' : '10px',
+                  flex: isMobile ? 1 : 'unset',
+                  width: isMobile ? 'auto' : '90%',
+                  marginLeft: isMobile ? '0' : '16px',
                   textAlign: 'left',
-                  padding: '11px 20px',
-                  background: isActive ? '#22C55E' : 'none',
+                  padding: isMobile ? '8px 4px' : '11px 20px',
+                  background: isActive ? (isMobile ? 'transparent' : '#22C55E') : 'none',
                   border: 'none',
-                  borderLeft: isActive ? '0px' : '3px solid transparent',
+                  borderLeft: !isMobile && isActive ? '0px' : !isMobile ? '3px solid transparent' : 'none',
+                  borderTop: isMobile && isActive ? '2px solid #22C55E' : isMobile ? '2px solid transparent' : 'none',
                   fontFamily: "'Space Grotesk', sans-serif",
                   fontWeight: isActive ? 700 : 500,
-                  fontSize: '0.8125rem',
+                  fontSize: isMobile ? '0.5rem' : '0.8125rem',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   cursor: 'pointer',
-                  color: isActive ? '#fff' : '#191C1D',
-                  boxShadow: isActive ? '4px 4px 0px 0px #111827' : 'none',
-                  transform: isActive ? 'translate(-2px, -2px)' : 'none',
-                  marginBottom: isActive ? '4px' : '0',
+                  color: isMobile ? (isActive ? '#22C55E' : '#6b7280') : (isActive ? '#fff' : '#191C1D'),
+                  boxShadow: !isMobile && isActive ? '4px 4px 0px 0px #111827' : 'none',
+                  transform: !isMobile && isActive ? 'translate(-2px, -2px)' : 'none',
+                  marginBottom: !isMobile && isActive ? '4px' : '0',
                   transition: 'none',
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                  {NAV_ICON_COMPONENTS[item.id]?.(isActive ? '#fff' : '#191C1D')}
+                  {NAV_ICON_COMPONENTS[item.id]?.(iconColor)}
                 </span>
                 {item.label}
               </button>
@@ -362,7 +388,7 @@ export default function AppPage() {
           })}
         </nav>
 
-        <div style={{ padding: '16px 20px', borderTop: '2px solid #111827' }}>
+        <div style={{ padding: '16px 20px', borderTop: '2px solid #111827', display: isMobile ? 'none' : 'block' }}>
           <button
             onClick={() => switchView('newproject')}
             onMouseEnter={() => setNewProjectHover(true)}
@@ -422,6 +448,7 @@ export default function AppPage() {
           zIndex: 5,
           display: 'flex',
           flexDirection: 'column',
+          paddingBottom: isMobile ? '60px' : '0',
         }}
       >
         <header
@@ -432,7 +459,7 @@ export default function AppPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0 32px',
+            padding: isMobile ? '0 16px' : '0 32px',
             height: '64px',
             background: 'rgba(248,249,250,0.85)',
             backdropFilter: 'blur(12px)',
@@ -493,7 +520,7 @@ export default function AppPage() {
           style={{
             flex: 1,
             minHeight: 0,
-            padding: activeView === 'newproject' ? '32px 48px 40px' : '40px 48px',
+            padding: isMobile ? '20px 16px' : activeView === 'newproject' ? '32px 48px 40px' : '40px 48px',
             maxWidth: '1400px',
             width: '100%',
             margin: '0 auto',

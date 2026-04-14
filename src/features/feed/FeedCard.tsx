@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { FeedItem, Milestone } from '../../types'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import CommentThread from '../comments/CommentThread'
 import CollabRequests from '../collaboration/CollabRequests'
 import { getRaiseHandStatus, raiseHand, lowerHand, getRaiseHandRequests } from '../../services/raiseHandService'
@@ -38,6 +39,7 @@ function getInitials(name: string): string {
 
 export default function FeedCard({ item, currentUserId }: Props) {
   const { user } = useAuthStore()
+  const isMobile = useIsMobile()
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [requestsOpen, setRequestsOpen] = useState(false)
 
@@ -116,7 +118,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
       }}
     >
       {/* ── LEFT: main content ── */}
-      <div style={{ width: '760px', minWidth: '760px', flexShrink: 0 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ padding: '20px 22px 0' }}>
         {/* Type tag */}
         <span style={{
@@ -284,7 +286,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
       </div>{/* end left column */}
 
       {/* ── RIGHT: trace log ── */}
-      <div style={{
+      {!isMobile && <div style={{
         flex: 1,
         minWidth: '200px',
         borderLeft: '2px solid #111827',
@@ -366,7 +368,7 @@ export default function FeedCard({ item, currentUserId }: Props) {
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   )
 }
