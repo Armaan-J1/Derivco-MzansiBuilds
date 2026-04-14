@@ -14,11 +14,39 @@ import type { DocumentSnapshot } from 'firebase/firestore'
 
 type View = 'feed' | 'myprojects' | 'celebration' | 'newproject'
 
-const NAV_ICONS: Record<View, string> = {
-  feed: '*',
-  myprojects: '[]',
-  celebration: 'o',
-  newproject: '+',
+function IconFeed({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="2" width="16" height="3" fill={color} />
+      <rect x="1" y="7.5" width="11" height="3" fill={color} />
+      <rect x="1" y="13" width="13" height="3" fill={color} />
+    </svg>
+  )
+}
+
+function IconProjects({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="7" height="7" fill={color} />
+      <rect x="10" y="1" width="7" height="7" fill={color} />
+      <rect x="1" y="10" width="7" height="7" fill={color} />
+      <rect x="10" y="10" width="7" height="7" fill={color} />
+    </svg>
+  )
+}
+
+function IconCelebration({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 1L11.06 6.26L17 6.73L12.75 10.37L14.18 16L9 13.01L3.82 16L5.25 10.37L1 6.73L6.94 6.26L9 1Z" fill={color} />
+    </svg>
+  )
+}
+
+const NAV_ICON_COMPONENTS: Record<string, (color: string) => JSX.Element> = {
+  feed: (c) => <IconFeed color={c} />,
+  myprojects: (c) => <IconProjects color={c} />,
+  celebration: (c) => <IconCelebration color={c} />,
 }
 
 export default function AppPage() {
@@ -325,7 +353,9 @@ export default function AppPage() {
                   transition: 'none',
                 }}
               >
-                <span style={{ fontSize: '1rem', lineHeight: 1 }}>{NAV_ICONS[item.id]}</span>
+                <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  {NAV_ICON_COMPONENTS[item.id]?.(isActive ? '#fff' : '#191C1D')}
+                </span>
                 {item.label}
               </button>
             )
